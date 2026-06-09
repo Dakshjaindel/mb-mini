@@ -1,14 +1,17 @@
-package com.example.mbmini;
+package com.example.mbmini.Controllers;
 
 
+import com.example.mbmini.Catalog;
+import com.example.mbmini.DTOs.CatalogDTO;
+import com.example.mbmini.DTOs.CatalogUpdateDTO;
+import com.example.mbmini.Services.JPAService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 
 @Validated
@@ -18,7 +21,7 @@ public class CatalogController {
     @Autowired
     private JPAService service;
 
-    @PostMapping({"/data"})
+    @PostMapping({"/catalog"})
     public @ResponseBody String create(@Valid @RequestBody CatalogDTO dto){
         Catalog catalog= new Catalog(dto.getProductName(),
                 dto.getQuantity(),
@@ -27,17 +30,22 @@ public class CatalogController {
         return service.create(catalog);
     }
 
-    @PutMapping({"/data"})
+    @PutMapping({"/catalog"})
     public @ResponseBody String update(@Valid @RequestBody CatalogUpdateDTO updateDTO){
         service.Update(updateDTO.getId(),updateDTO.getProductName(), updateDTO.getQuantity(), updateDTO.getPrice(),updateDTO.getIsActive());
         return "Catalog updated from json body";
     }
-    @GetMapping({"/data/{id}"})
+    @GetMapping({"/catalog"})
+    public List<Catalog> getAll() {
+        return service.findAll();
+    }
+
+    @GetMapping({"/catalog/{id}"})
     public @ResponseBody String getbyId( @PathVariable Long id){
         return service.Get(id);
     }
 
-    @PostMapping({"/data/cache/refresh"})
+    @PostMapping({"/catalog/cache/refresh"})
     public String cacheRefresh(){
         return service.cacheRefresh();
     }

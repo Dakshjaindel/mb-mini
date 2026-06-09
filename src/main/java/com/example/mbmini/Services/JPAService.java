@@ -1,8 +1,8 @@
-package com.example.mbmini;
+package com.example.mbmini.Services;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.json.JSONException;
+import com.example.mbmini.Catalog;
+import com.example.mbmini.RepoConnections.JPARepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
@@ -11,7 +11,6 @@ import tools.jackson.databind.ObjectMapper;// for jackson 3.x (Spring Boot 4)
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class JPAService {
@@ -70,6 +69,12 @@ public class JPAService {
 
     }
 
+
+    public List<Catalog> findAll() {
+        List<Catalog> catalogs = new ArrayList<>();
+        repository.findAll().forEach(catalogs::add);
+        return catalogs;
+    }
 
     public String cacheRefresh(){
         List<Catalog> catalogs=new ArrayList<>();

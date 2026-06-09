@@ -24,19 +24,17 @@ public class Catalog {
     @GeneratedValue
     private Long Id;
 
-    @Setter
-    @NotNull
+
+    @Column
     private String productName;
 
-    @Min(0)
+    @Column
     private Integer quantity;
 
-    @Min(0)
-    @Digits(fraction = 2,message = "Numeric value out of bounds (.<2 digits> expected)", integer = 12)
+    @Column
     private BigDecimal price;
 
-
-    @NotNull
+    @Column
     private Boolean isActive;
 
     @Column(name = "created_on")

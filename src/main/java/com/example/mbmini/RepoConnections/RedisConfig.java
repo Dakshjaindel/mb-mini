@@ -1,4 +1,4 @@
-package com.example.mbmini;
+package com.example.mbmini.RepoConnections;
 
 
 import org.springframework.beans.factory.annotation.Value;

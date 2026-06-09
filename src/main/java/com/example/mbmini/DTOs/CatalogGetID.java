@@ -1,6 +1,5 @@
-package com.example.mbmini;
+package com.example.mbmini.DTOs;
 
-import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;

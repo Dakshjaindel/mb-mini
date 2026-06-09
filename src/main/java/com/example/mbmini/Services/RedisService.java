@@ -1,8 +1,8 @@
-package com.example.mbmini;
+package com.example.mbmini.Services;
 
 
+import com.example.mbmini.Catalog;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -48,12 +48,7 @@ public class RedisService {
     public String Get(long Id){
         String key=String.valueOf(Id);
         try (Jedis jedis=jedisPool.getResource()){
-            String gotobject =jedis.get(key);
-            if (gotobject==null) return null;
-            ObjectMapper mapper= new ObjectMapper();
-            Catalog result=mapper.readValue(gotobject,Catalog.class);
-            return "Retrieved the value of "+ result.toString();
-
+            return jedis.get(key);
         }
     }
 
