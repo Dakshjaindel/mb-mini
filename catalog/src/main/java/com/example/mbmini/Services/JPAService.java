@@ -17,20 +17,20 @@ public class JPAService {
     private final JPARepo repository;
 
     @Autowired
-    private RedisService redisService;
+    private CatalogRedisService catalogRedisService;
 
 
     public JPAService(JPARepo repository) {this.repository = repository;}
 
     public String create(Catalog catalog){
         Catalog saved= repository.save(catalog);
-        redisService.Create(saved);
+        catalogRedisService.Create(saved);
         String key= String.valueOf(saved.getId());
         return "Saved with the Id"+ key;
     }
 
     public String Update(long Id,String productName,Integer quantity,BigDecimal price, Boolean isActive){
-        redisService.Update( Id, productName, quantity, price,  isActive);
+        catalogRedisService.Update( Id, productName, quantity, price,  isActive);
         Catalog catalog=repository.findById(Id).orElseThrow(()->new RuntimeException("Catalog not Found with Id: "+ Id));
         if (productName != null){
             catalog.setProductName(productName);
@@ -49,20 +49,22 @@ public class JPAService {
         return "Updated Successfully";
     }
 
-    public String Get(long Id){
+    public Catalog Get(long Id){
         ObjectMapper mapper= new ObjectMapper();
-        String cached=redisService.Get(Id);
+        String cached= catalogRedisService.Get(Id);
+
         if (cached!= null){
-            return cached;
+            Catalog cachedCatalog= mapper.readValue(cached, Catalog.class);
+            return cachedCatalog;
         }
         String needed= String.valueOf(Id);
         Catalog catalog = repository.findById(Id).orElseThrow(()->new RuntimeException("Catalog not found with id: " + Id));
 
-        redisService.Create((catalog));
+        catalogRedisService.Create((catalog));
 
 
         try {
-            return new ObjectMapper().writeValueAsString(catalog);
+            return catalog;
         } catch (JacksonException e) {
             throw new RuntimeException("Error converting to JSON", e);
         }
@@ -82,7 +84,7 @@ public class JPAService {
         if (catalogs.isEmpty()){
             return "Na data in MYSQL DB";
         }
-        redisService.refreshCache(catalogs);
+        catalogRedisService.refreshCache(catalogs);
         return "Data refreshed in redis";
 
     }

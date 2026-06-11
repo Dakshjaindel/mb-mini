@@ -41,7 +41,7 @@ public class CatalogController {
     }
 
     @GetMapping({"/catalog/{id}"})
-    public @ResponseBody String getbyId( @PathVariable Long id){
+    public @ResponseBody Catalog getbyId( @PathVariable Long id){
         return service.Get(id);
     }
 
