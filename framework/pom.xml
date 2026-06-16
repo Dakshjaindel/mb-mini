@@ -5,14 +5,14 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.6</version>
+        <version>4.1.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.example</groupId>
-    <artifactId>mb-mini-cart</artifactId>
+    <artifactId>mb-mini-framework</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>mb-mini-cart</name>
-    <description>mb-mini-cart</description>
+    <name>mb-mini-framework</name>
+    <description>mb-mini-framework</description>
     <url/>
     <licenses>
         <license/>
@@ -30,23 +30,10 @@
         <java.version>17</java.version>
     </properties>
     <dependencies>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>mb-mini-catalog</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>mb-mini-customer</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
 
 
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>mb-mini-framework</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
+
+
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -123,6 +110,9 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+
+
+
 
     </dependencies>
 

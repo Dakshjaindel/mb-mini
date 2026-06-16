@@ -7,4 +7,6 @@ public interface CustomerRepo extends CrudRepository<Customer,Long> {
     boolean existsByPhoneNo(String phoneNo);
 
     Customer findByPhoneNo(String phoneNo);
+
+    Customer getCustomerById(Long customerId);
 }

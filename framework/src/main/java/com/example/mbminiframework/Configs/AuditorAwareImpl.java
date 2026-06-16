@@ -1,10 +1,11 @@
-package com.example.mbminicustomer;
+package com.example.mbminiframework.Configs;
 
 import org.springframework.data.domain.AuditorAware;
 
 import java.util.Optional;
 
 public class AuditorAwareImpl implements AuditorAware<String> {
+
     public static final ThreadLocal<String> currentUser= new ThreadLocal<>();
 
     public static void setCurrentUser(String userId) {

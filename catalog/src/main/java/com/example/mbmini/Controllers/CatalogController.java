@@ -1,7 +1,7 @@
 package com.example.mbmini.Controllers;
 
 
-import com.example.mbmini.Catalog;
+import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.DTOs.CatalogDTO;
 import com.example.mbmini.DTOs.CatalogUpdateDTO;
 import com.example.mbmini.Services.JPAService;

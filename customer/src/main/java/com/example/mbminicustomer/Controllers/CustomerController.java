@@ -1,17 +1,12 @@
 package com.example.mbminicustomer.Controllers;
 
 
-import com.example.mbminicustomer.DTOs.GenerateLoginDTO;
-import com.example.mbminicustomer.DTOs.LoginDTO;
-import com.example.mbminicustomer.DTOs.RegisterDTO;
+import com.example.mbminicustomer.DTOs.*;
 import com.example.mbminicustomer.Entities.Customer;
 import com.example.mbminicustomer.Services.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class CustomerController {
@@ -47,5 +42,15 @@ public class CustomerController {
 
         );
         return service.Register(customer);
+    }
+
+    @PutMapping({"/customers"})
+    public @ResponseBody String updateCustomer(@Valid @RequestBody UpdateCustomerDTO updateCustomerDTO){
+        return service.update(updateCustomerDTO.getCustomerId(), updateCustomerDTO.getNewName(),updateCustomerDTO.getNewEmail(), updateCustomerDTO.getNewHouseNO(), updateCustomerDTO.getNewLocality(),updateCustomerDTO.getNewCity(), updateCustomerDTO.getNewPincode());
+    }
+
+    @PutMapping({"/customers/password"})
+    public @ResponseBody String updatePass(@Valid@RequestBody UpdatePassDTO updatePassDTO){
+        return service.passwordUpdate(updatePassDTO.getId(),updatePassDTO.getNewPass());
     }
 }

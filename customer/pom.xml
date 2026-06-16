@@ -101,6 +101,12 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>mb-mini-framework</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
 
 
     </dependencies>

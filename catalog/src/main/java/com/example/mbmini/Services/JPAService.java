@@ -1,7 +1,7 @@
 package com.example.mbmini.Services;
 
 
-import com.example.mbmini.Catalog;
+import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.RepoConnections.JPARepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ public class JPAService {
 
     public String create(Catalog catalog){
         Catalog saved= repository.save(catalog);
-        catalogRedisService.Create(saved);
+        catalogRedisService.Create(saved,saved.getId());
         String key= String.valueOf(saved.getId());
         return "Saved with the Id"+ key;
     }
@@ -60,7 +60,7 @@ public class JPAService {
         String needed= String.valueOf(Id);
         Catalog catalog = repository.findById(Id).orElseThrow(()->new RuntimeException("Catalog not found with id: " + Id));
 
-        catalogRedisService.Create((catalog));
+        catalogRedisService.Create(catalog,catalog.getId());
 
 
         try {

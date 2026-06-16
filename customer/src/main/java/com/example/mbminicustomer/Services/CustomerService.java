@@ -49,7 +49,7 @@ public class CustomerService {
             String authKey=authKeyGenerator.generate();
             AuthSession authSession= new AuthSession(customer.getId(),authKey);
             sessionRepo.save(authSession);
-            customerRedisService.sessionInRedis(authSession);
+            customerRedisService.addInRedis(authSession,authSession.getId().toString());
             AuditorAwareImpl.clear();
             return "Logging In ------- Started Auth Session";
         }
@@ -68,7 +68,7 @@ public class CustomerService {
 
         Customer audited = customerRepo.save(saved);
 
-        customerRedisService.Register(audited);
+        customerRedisService.addInRedis(audited,audited.getId().toString());
 
         String key= String.valueOf(audited.getId());
 
@@ -78,9 +78,44 @@ public class CustomerService {
 
         sessionRepo.save(authSession);
 
-        customerRedisService.sessionInRedis(authSession);
+        customerRedisService.addInRedis(authSession,authSession.getId().toString());
 
         return "Saved with the Id"+ key +" and Auth Session Started";
+    }
+
+    public String update(Long CustomerId, String newName,String newEmail, Long newHouseNo, String newLocality, String newCity, Long newPincode ){
+        Customer customer=customerRepo.getCustomerById(CustomerId);
+        customerRedisService.updateInRedis(CustomerId,newName,newEmail,newHouseNo,newLocality,newCity,newPincode);
+        if (newName !=null){
+            customer.setName(newName);
+        }
+        if (newEmail != null){
+            customer.setEmail(newEmail);
+        }
+        if (newHouseNo != null){
+            customer.setHouseNo(newHouseNo);
+        }
+        if (newLocality != null){
+            customer.setLocality(newLocality);
+        }
+        if (newCity != null){
+            customer.setCity(newCity);
+        }
+        if (newPincode != null){
+            customer.setPincode(newPincode);
+        }
+        customerRepo.save(customer);
+
+        return "Updated Successfully";
+    }
+
+
+    public String passwordUpdate(Long CustomerId,String newPass){
+        Customer customer=customerRepo.getCustomerById(CustomerId);
+        customerRedisService.updatePassInRedis(CustomerId,newPass);
+        customer.setPassword(newPass);
+        customerRepo.save(customer);
+        return "Password Updated";
     }
 
 

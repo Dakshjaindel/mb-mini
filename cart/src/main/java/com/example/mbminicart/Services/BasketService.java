@@ -1,18 +1,12 @@
 package com.example.mbminicart.Services;
 
 
-import com.example.mbmini.Catalog;
+import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.Services.JPAService;
 import com.example.mbminicart.Configs.CatalogClient;
 import com.example.mbminicart.Configs.CustomerClient;
-import com.example.mbminicart.Entities.Basket;
-import com.example.mbminicart.Entities.BasketItem;
-import com.example.mbminicart.Entities.Credits;
-import com.example.mbminicart.Entities.CustomerNetCredit;
-import com.example.mbminicart.Repos.BasketRepo;
-import com.example.mbminicart.Repos.CreditRepo;
-import com.example.mbminicart.Repos.ItemRepo;
-import com.example.mbminicart.Repos.NetCreditRepo;
+import com.example.mbminicart.Entities.*;
+import com.example.mbminicart.Repos.*;
 import com.example.mbminicustomer.Services.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +18,8 @@ import java.util.Date;
 
 @Service
 public class BasketService {
+
+    private final LogRepo logRepo;
     private final BasketRepo basketRepo;
     private final ItemRepo itemRepo;
     private final CreditRepo creditRepo;
@@ -33,9 +29,10 @@ public class BasketService {
 
     private final CustomerService customerService;
 
-    public BasketService(BasketRepo repository, BasketRepo basketRepo, ItemRepo itemRepo, CatalogClient catalogClient, CustomerClient customerClient, CreditRepo creditRepo, NetCreditRepo netCreditRepo, JPAService catalogService, CustomerService customerService) {
+    public BasketService(BasketRepo repository, BasketRepo basketRepo, ItemRepo itemRepo, CatalogClient catalogClient, CustomerClient customerClient, LogRepo logRepo, CreditRepo creditRepo, NetCreditRepo netCreditRepo, JPAService catalogService, CustomerService customerService) {
         this.basketRepo = basketRepo;
         this.itemRepo = itemRepo;
+        this.logRepo = logRepo;
         this.creditRepo = creditRepo;
         this.netCreditRepo = netCreditRepo;
         this.catalogService = catalogService;
@@ -44,10 +41,12 @@ public class BasketService {
 
     public String newBasket(Long userId, Date date,Integer flag){
         Basket basket = new Basket(userId,date,flag,0);
+
         basketRepo.save(basket);
 
         CustomerNetCredit customerNetCredit=new CustomerNetCredit(userId,BigDecimal.ZERO,flag);
         netCreditRepo.save(customerNetCredit);
+        logRepo.save(new Log("new basket made with basketID "+ basket.getId()+"new CreditWallet made with walletId "+ customerNetCredit.getId()));
         return "new basket made with basketID "+ basket.getId();
     }
 
@@ -76,6 +75,7 @@ public class BasketService {
                 item.setFlag(0);
                 itemRepo.save(item);
                 basketRepo.save(basket);
+                logRepo.save(new Log("Item removed from basket with basketId"+basket.getId()));
                 return "Item removed from basket";
             }
             basket.setQuantity(basket.getQuantity()-(item.getQuantity()-quantity));
@@ -83,6 +83,7 @@ public class BasketService {
             basket.setFlag(1);
             basketRepo.save(basket);
             itemRepo.save(item);
+            logRepo.save(new Log("Item quantity updated for itemId "+ item.getId()+" in the basket with basketId "+ basket.getId()));
             return "Item quantity updated to "+quantity;
         }
         else {
@@ -91,6 +92,7 @@ public class BasketService {
             basket.setQuantity(basket.getQuantity()+quantity);
             basket.setFlag(1);
             basketRepo.save(basket);
+            logRepo.save(new Log("Item added to basketId "+ basket.getId()+" with Id "+item.getId()));
             return  "new Item added to basket.";
         }
 
@@ -106,6 +108,7 @@ public class BasketService {
         BigDecimal newCredit=netCredit.getWalletCredit().add(creditAmount);
         netCredit.setWalletCredit(newCredit);
         netCreditRepo.save(netCredit);
+        logRepo.save(new Log("Credit added to userId " + customerId + "'s wallet, of value "+ creditAmount.toString()));
         return "Credit added to userId " + customerId + "'s wallet, and added to net credit";
     }
 

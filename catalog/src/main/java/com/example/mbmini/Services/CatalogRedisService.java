@@ -1,7 +1,7 @@
 package com.example.mbmini.Services;
 
 
-import com.example.mbmini.Catalog;
+import com.example.mbmini.Entities.Catalog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
@@ -10,21 +10,16 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.util.List;
+import com.example.mbminiframework.RedisPackage.RedisMethods;
 
 
 @RequiredArgsConstructor
 @Service
 public class CatalogRedisService {
     private final JedisPool jedisPool;
-    public void Create(Catalog catalog){
-        ObjectMapper mapper=new ObjectMapper();
-        try(Jedis jedis=jedisPool.getResource()){
-            String value=mapper.writeValueAsString(catalog);
-            jedis.set(String.valueOf(catalog.getId()), value);
-            System.out.println("Saved to Redis - Key: " + catalog.getId() + " Value: " + value);
-        }catch (Exception e){
-            System.out.println("Redis error: " + e.getMessage());
-        }
+    private final RedisMethods redisMethods;
+    public void Create(Catalog catalog,Long Id){
+        redisMethods.addInRedis(catalog,Id.toString());
     }
 
     public void Update(long Id, String productName, Integer quantity, BigDecimal price, Boolean isActive){
