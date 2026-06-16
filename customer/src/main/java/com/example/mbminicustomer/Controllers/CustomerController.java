@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.AuthProvider;
+
 @RestController
 public class CustomerController {
 
@@ -53,4 +55,17 @@ public class CustomerController {
     public @ResponseBody String updatePass(@Valid@RequestBody UpdatePassDTO updatePassDTO){
         return service.passwordUpdate(updatePassDTO.getId(),updatePassDTO.getNewPass());
     }
+
+    @PostMapping({"/customers/logout"})
+    public @ResponseBody String logout(@RequestHeader("Authorization") String authHeader){
+        String authKey = authHeader.replace("Bearer ", "");
+        return service.logout(authKey);
+    }
+
+    @PostMapping({"/customer/refresh"})
+    public @ResponseBody String refresh(@RequestParam String refreshToken){
+        return service.refresh(refreshToken);
+    }
+
+
 }

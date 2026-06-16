@@ -4,10 +4,13 @@ package com.example.mbminicustomer.Services;
 import com.example.mbminicustomer.Entities.AuthSession;
 import com.example.mbminicustomer.Entities.Customer;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import tools.jackson.databind.ObjectMapper;
+
+import java.time.Duration;
 
 
 @RequiredArgsConstructor
@@ -33,9 +36,20 @@ public class CustomerRedisService {
             String value=mapper.writeValueAsString(authSession);
             String key = "AuthSession."+authSession.getId();
             jedis.set(key, value);
+            jedis.expire(key,2592000);
             System.out.println("Saved to Redis - Key: " + authSession.getId() + " Value: " + value);
         }catch (Exception e){
             System.out.println("Redis error: " + e.getMessage());
+        }
+    }
+
+    public void deleteSessionInRedis(AuthSession session){
+        try (Jedis jedis = jedisPool.getResource()) {
+            String key = "AuthSession." + session.getId();
+            jedis.del(key);
+            System.out.println("Deleted from Redis: " + key);
+        } catch (Exception e) {
+            System.out.println("Redis delete error: " + e.getMessage());
         }
     }
 

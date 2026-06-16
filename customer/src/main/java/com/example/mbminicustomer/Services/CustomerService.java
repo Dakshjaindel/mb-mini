@@ -10,10 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 public class CustomerService {
 
     private AuthKeyGenerator authKeyGenerator;
+
+    private RefreshTokenGenerator refreshTokenGenerator;
 
     private final CustomerRepo customerRepo;
 
@@ -22,10 +26,11 @@ public class CustomerService {
 
     private final SessionRepo sessionRepo;
 
-    public CustomerService(AuthKeyGenerator authKeyGenerator, CustomerRepo customerRepo, SessionRepo sessionRepo) {
+    public CustomerService(AuthKeyGenerator authKeyGenerator, CustomerRepo customerRepo, SessionRepo sessionRepo,RefreshTokenGenerator refreshTokenGenerator) {
         this.authKeyGenerator = authKeyGenerator;
         this.customerRepo = customerRepo;
         this.sessionRepo = sessionRepo;
+        this.refreshTokenGenerator=refreshTokenGenerator;
     }
 
 
@@ -47,11 +52,13 @@ public class CustomerService {
             AuditorAwareImpl.setCurrentUser(String.valueOf(customer.getId()));
 
             String authKey=authKeyGenerator.generate();
-            AuthSession authSession= new AuthSession(customer.getId(),authKey);
+            String refreshToken= refreshTokenGenerator.generate();
+
+            AuthSession authSession= new AuthSession(customer.getId(),authKey,refreshToken);
             sessionRepo.save(authSession);
-            customerRedisService.addInRedis(authSession,authSession.getId().toString());
+            customerRedisService.sessionInRedis(authSession);
             AuditorAwareImpl.clear();
-            return "Logging In ------- Started Auth Session";
+            return "Logging In ------- Started Auth Session " + "AuthKey: " + authKey + " | RefreshToken: " + refreshToken;
         }
         else {
             throw new RuntimeException("Password didnt match");
@@ -73,8 +80,9 @@ public class CustomerService {
         String key= String.valueOf(audited.getId());
 
         String authKey=authKeyGenerator.generate();
+        String refreshToken = refreshTokenGenerator.generate();
 
-        AuthSession authSession= new AuthSession(audited.getId(),authKey);
+        AuthSession authSession= new AuthSession(audited.getId(),authKey,refreshToken);
 
         sessionRepo.save(authSession);
 
@@ -116,6 +124,38 @@ public class CustomerService {
         customer.setPassword(newPass);
         customerRepo.save(customer);
         return "Password Updated";
+    }
+
+    public String logout(String authKey){
+
+        AuthSession session=sessionRepo.findByAuthKey(authKey).orElseThrow(() ->new RuntimeException("Session not found"));
+
+        customerRedisService.deleteSessionInRedis(session);
+        sessionRepo.delete(session);
+
+        return "Logged out and session ended";
+
+    }
+
+
+    public String refresh(String refreshToken){
+        AuthSession oldsession= sessionRepo.findByRefreshToken(refreshToken).orElseThrow(() ->new RuntimeException("Session not found"));
+        if (oldsession.getRefreshTokenExpiresAt().isBefore(LocalDateTime.now())){
+            throw new RuntimeException("Refresh token expired, please log in again");
+        }
+
+        customerRedisService.deleteSessionInRedis(oldsession);
+        sessionRepo.delete(oldsession);
+
+        String newAuthKey= authKeyGenerator.generate();
+        String newRefreshToken=refreshTokenGenerator.generate();
+        AuthSession newSession=new AuthSession(oldsession.getUserId(), newAuthKey,newRefreshToken);
+        sessionRepo.save(newSession);
+        customerRedisService.sessionInRedis(newSession);
+
+        return "session refreshed with "+ "authKey "+ newAuthKey + " refreshToken "+ newRefreshToken;
+
+
     }
 
 
