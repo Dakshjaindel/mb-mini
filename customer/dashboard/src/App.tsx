@@ -1,161 +1,248 @@
 import { useCallback, useEffect, useState } from 'react'
-import {
-  createCatalog,
-  fetchCatalogs,
-  refreshCache,
-  updateCatalog,
-} from './api/client'
-import { CatalogForm } from './components/CatalogForm'
-import { CatalogTable } from './components/CatalogTable'
-import { Modal } from './components/Modal'
-import { StatsCards } from './components/StatsCards'
+import { fetchCatalogs } from './api/catalog'
+import * as cartApi from './api/cart'
+import { AuthPanel } from './components/AuthPanel'
+import { BasketPanel } from './components/BasketPanel'
+import { CatalogGrid } from './components/CatalogGrid'
+import { Layout } from './components/Layout'
 import { Toast } from './components/Toast'
-import type { Catalog, CatalogCreate } from './types/catalog'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { useToast } from './hooks/useToast'
+import type { LocalBasketItem } from './types/basket'
+import type { Catalog } from './types/catalog'
 
-type ModalMode = 'create' | 'edit' | null
+type Tab = 'catalog' | 'basket'
 
-function App() {
+function Dashboard() {
+  const { session, loading: authLoading } = useAuth()
+  const { toast, showToast, dismissToast } = useToast()
+
+  const [activeTab, setActiveTab] = useState<Tab>('catalog')
   const [catalogs, setCatalogs] = useState<Catalog[]>([])
-  const [loading, setLoading] = useState(true)
-  const [modalMode, setModalMode] = useState<ModalMode>(null)
-  const [editingCatalog, setEditingCatalog] = useState<Catalog | undefined>()
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-  const [refreshing, setRefreshing] = useState(false)
+  const [catalogLoading, setCatalogLoading] = useState(false)
+  const [addingProductId, setAddingProductId] = useState<number | null>(null)
 
-  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 4000)
-  }, [])
+  const [basketId, setBasketId] = useState<number | null>(null)
+  const [basketItems, setBasketItems] = useState<LocalBasketItem[]>([])
+  const [basketFinalized, setBasketFinalized] = useState(false)
+  const [basketBusy, setBasketBusy] = useState(false)
+  const [walletCredit, setWalletCredit] = useState(0)
 
   const loadCatalogs = useCallback(async () => {
-    setLoading(true)
+    setCatalogLoading(true)
     try {
       const data = await fetchCatalogs()
       setCatalogs(data)
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to load catalog', 'error')
     } finally {
-      setLoading(false)
+      setCatalogLoading(false)
     }
   }, [showToast])
 
   useEffect(() => {
-    loadCatalogs()
-  }, [loadCatalogs])
+    if (session) {
+      loadCatalogs()
+    }
+  }, [session, loadCatalogs])
 
-  function openCreate() {
-    setEditingCatalog(undefined)
-    setModalMode('create')
-  }
+  useEffect(() => {
+    setBasketId(null)
+    setBasketItems([])
+    setBasketFinalized(false)
+    setWalletCredit(0)
+  }, [session?.customerId])
 
-  function openEdit(catalog: Catalog) {
-    setEditingCatalog(catalog)
-    setModalMode('edit')
-  }
+  const ensureBasket = useCallback(async (): Promise<number> => {
+    if (basketId) return basketId
+    if (!session) throw new Error('Not signed in')
+    const id = await cartApi.createBasket(session.customerId)
+    setBasketId(id)
+    setBasketFinalized(false)
+    return id
+  }, [basketId, session])
 
-  function closeModal() {
-    setModalMode(null)
-    setEditingCatalog(undefined)
-  }
+  const syncLocalItem = useCallback((product: Catalog, quantity: number) => {
+    setBasketItems((prev) => {
+      if (quantity <= 0) {
+        return prev.filter((item) => item.productId !== product.id)
+      }
+      const existing = prev.find((item) => item.productId === product.id)
+      if (existing) {
+        return prev.map((item) =>
+          item.productId === product.id ? { ...item, quantity } : item,
+        )
+      }
+      return [
+        ...prev,
+        {
+          productId: product.id,
+          productName: product.productName,
+          price: Number(product.price),
+          quantity,
+        },
+      ]
+    })
+  }, [])
 
-  async function handleCreate(data: CatalogCreate) {
-    const message = await createCatalog(data)
-    showToast(message)
-    closeModal()
-    await loadCatalogs()
-  }
-
-  async function handleUpdate(data: { id: number } & Partial<CatalogCreate>) {
-    const message = await updateCatalog(data)
-    showToast(message)
-    closeModal()
-    await loadCatalogs()
-  }
-
-  async function handleCacheRefresh() {
-    setRefreshing(true)
+  async function handleAddToBasket(product: Catalog, quantity: number) {
+    if (!session) {
+      showToast('Sign in to add items to your basket', 'error')
+      return
+    }
+    setAddingProductId(product.id)
+    setBasketBusy(true)
     try {
-      const message = await refreshCache()
-      showToast(message)
+      const id = await ensureBasket()
+      const existing = basketItems.find((item) => item.productId === product.id)
+      const newQty = (existing?.quantity ?? 0) + quantity
+      const lineTotal = Number(product.price) * newQty
+      if (walletCredit < lineTotal) {
+        showToast(
+          `Add at least ₹${lineTotal.toLocaleString('en-IN')} wallet credit before adding this item.`,
+          'error',
+        )
+        setActiveTab('basket')
+        return
+      }
+      await cartApi.addItemToBasket(id, product.id, newQty)
+      syncLocalItem(product, newQty)
+      showToast(`Added ${product.productName} to basket`)
+      setActiveTab('basket')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Cache refresh failed', 'error')
+      showToast(err instanceof Error ? err.message : 'Could not add item', 'error')
     } finally {
-      setRefreshing(false)
+      setAddingProductId(null)
+      setBasketBusy(false)
     }
   }
 
+  async function handleUpdateQuantity(productId: number, quantity: number) {
+    if (!basketId) return
+    const item = basketItems.find((i) => i.productId === productId)
+    if (!item) return
+
+    setBasketBusy(true)
+    try {
+      await cartApi.addItemToBasket(basketId, productId, quantity)
+      syncLocalItem(
+        { id: productId, productName: item.productName, price: item.price, quantity: 0, isActive: true },
+        quantity,
+      )
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not update quantity', 'error')
+    } finally {
+      setBasketBusy(false)
+    }
+  }
+
+  async function handleAddCredit(amount: number) {
+    if (!session) return
+    if (!amount || amount <= 0) {
+      showToast('Enter a valid credit amount', 'error')
+      return
+    }
+    await ensureBasket()
+    await cartApi.addWalletCredit(session.customerId, amount)
+    setWalletCredit((current) => current + amount)
+    showToast(`Added ₹${amount.toLocaleString('en-IN')} to wallet`)
+  }
+
+  async function handleFinalize() {
+    if (!basketId) throw new Error('No basket')
+    const message = await cartApi.finalizeOrder(basketId)
+    setBasketFinalized(true)
+    const total = basketItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    setWalletCredit((current) => Math.max(0, current - total))
+    showToast(message)
+    await loadCatalogs()
+  }
+
+  function handleNewBasket() {
+    setBasketId(null)
+    setBasketItems([])
+    setBasketFinalized(false)
+    setWalletCredit(0)
+    setActiveTab('catalog')
+  }
+
+  const basketCount = basketItems.reduce((sum, item) => sum + item.quantity, 0)
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0b0d12] text-slate-400">
+        Loading session…
+      </div>
+    )
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-[#0b0d12] py-10">
+        <div className="mb-8 text-center">
+          <p className="text-sm font-semibold uppercase tracking-widest text-sky-400">MB Mini</p>
+          <h1 className="mt-2 text-3xl font-bold text-white">Unified Commerce Dashboard</h1>
+          <p className="mt-2 text-slate-500">Customer · Catalog · Cart — all in one place</p>
+        </div>
+        <AuthPanel onSuccess={() => showToast('Welcome!')} onError={(msg) => showToast(msg, 'error')} />
+        <Toast message={toast?.message ?? null} type={toast?.type} onDismiss={dismissToast} />
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-[#0f1117]">
-      <header className="border-b border-white/10 bg-[#0f1117]/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">Catalog Dashboard</h1>
-            <p className="mt-0.5 text-sm text-slate-500">mb-mini API · MySQL + Redis</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleCacheRefresh}
-              disabled={refreshing}
-              className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/5 disabled:opacity-50"
-            >
-              {refreshing ? 'Refreshing…' : 'Refresh Cache'}
-            </button>
+    <Layout activeTab={activeTab} onTabChange={setActiveTab} basketCount={basketCount}>
+      {activeTab === 'catalog' && (
+        <section>
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Product catalog</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Live from catalog service · {catalogs.length} products
+              </p>
+            </div>
             <button
               type="button"
               onClick={loadCatalogs}
-              className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/5"
+              className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 hover:bg-white/5"
             >
-              Reload
-            </button>
-            <button
-              type="button"
-              onClick={openCreate}
-              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500"
-            >
-              + Add Product
+              Refresh
             </button>
           </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl space-y-8 px-6 py-8">
-        <StatsCards catalogs={catalogs} />
-
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Product Catalog</h2>
-            <span className="text-sm text-slate-500">{catalogs.length} items</span>
-          </div>
-          <CatalogTable catalogs={catalogs} onEdit={openEdit} loading={loading} />
+          <CatalogGrid
+            catalogs={catalogs}
+            loading={catalogLoading}
+            onAddToBasket={handleAddToBasket}
+            addingProductId={addingProductId}
+          />
         </section>
-      </main>
+      )}
 
-      <Modal
-        title={modalMode === 'create' ? 'Add Product' : 'Edit Product'}
-        open={modalMode !== null}
-        onClose={closeModal}
-      >
-        <CatalogForm
-          mode={modalMode === 'create' ? 'create' : 'edit'}
-          initial={editingCatalog}
-          onSubmit={async (data) => {
-            if (modalMode === 'create') {
-              await handleCreate(data)
-            } else if (editingCatalog) {
-              await handleUpdate({ id: editingCatalog.id, ...data })
-            }
-          }}
-          onCancel={closeModal}
+      {activeTab === 'basket' && (
+        <BasketPanel
+          items={basketItems}
+          basketId={basketId}
+          finalized={basketFinalized}
+          loading={basketBusy}
+          walletCredit={walletCredit}
+          onEnsureBasket={ensureBasket}
+          onAddCredit={handleAddCredit}
+          onUpdateQuantity={handleUpdateQuantity}
+          onFinalize={handleFinalize}
+          onNewBasket={handleNewBasket}
         />
-      </Modal>
+      )}
 
-      <Toast
-        message={toast?.message ?? null}
-        type={toast?.type}
-        onDismiss={() => setToast(null)}
-      />
-    </div>
+      <Toast message={toast?.message ?? null} type={toast?.type} onDismiss={dismissToast} />
+    </Layout>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Dashboard />
+    </AuthProvider>
   )
 }
 

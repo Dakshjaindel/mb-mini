@@ -6,6 +6,7 @@ import com.example.mbminicustomer.ConfigsRepo.CustomerRepo;
 import com.example.mbminicustomer.ConfigsRepo.SessionRepo;
 import com.example.mbminicustomer.Entities.AuthSession;
 import com.example.mbminicustomer.Entities.Customer;
+import com.example.mbminiframework.RedisPackage.RedisMethods;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,23 +16,24 @@ import java.time.LocalDateTime;
 @Service
 public class CustomerService {
 
+    @Autowired
     private AuthKeyGenerator authKeyGenerator;
-
+    @Autowired
     private RefreshTokenGenerator refreshTokenGenerator;
 
-    private final CustomerRepo customerRepo;
+    @Autowired
+    private CustomerRepo customerRepo;
 
     @Autowired
     private CustomerRedisService customerRedisService;
 
-    private final SessionRepo sessionRepo;
+    @Autowired
+    private SessionRepo sessionRepo;
 
-    public CustomerService(AuthKeyGenerator authKeyGenerator, CustomerRepo customerRepo, SessionRepo sessionRepo,RefreshTokenGenerator refreshTokenGenerator) {
-        this.authKeyGenerator = authKeyGenerator;
-        this.customerRepo = customerRepo;
-        this.sessionRepo = sessionRepo;
-        this.refreshTokenGenerator=refreshTokenGenerator;
-    }
+    @Autowired
+    private RedisMethods redisMethods;
+
+
 
 
     public String generateLogin(String PhoneNo){
@@ -56,7 +58,7 @@ public class CustomerService {
 
             AuthSession authSession= new AuthSession(customer.getId(),authKey,refreshToken);
             sessionRepo.save(authSession);
-            customerRedisService.sessionInRedis(authSession);
+            redisMethods.addInRedis(authSession,authSession.getId().toString(),259200);
             AuditorAwareImpl.clear();
             return "Logging In ------- Started Auth Session " + "AuthKey: " + authKey + " | RefreshToken: " + refreshToken;
         }
@@ -75,7 +77,7 @@ public class CustomerService {
 
         Customer audited = customerRepo.save(saved);
 
-        customerRedisService.addInRedis(audited,audited.getId().toString());
+        redisMethods.addInRedis(audited,audited.getId().toString());
 
         String key= String.valueOf(audited.getId());
 
@@ -86,9 +88,9 @@ public class CustomerService {
 
         sessionRepo.save(authSession);
 
-        customerRedisService.addInRedis(authSession,authSession.getId().toString());
+        redisMethods.addInRedis(authSession,authSession.getId().toString(),2952000);
 
-        return "Saved with the Id"+ key +" and Auth Session Started";
+        return "Saved with the Id"+ key +" and Auth Session Started AuthKey: " + authKey + " | RefreshToken: " + refreshToken;
     }
 
     public String update(Long CustomerId, String newName,String newEmail, Long newHouseNo, String newLocality, String newCity, Long newPincode ){
@@ -130,7 +132,7 @@ public class CustomerService {
 
         AuthSession session=sessionRepo.findByAuthKey(authKey).orElseThrow(() ->new RuntimeException("Session not found"));
 
-        customerRedisService.deleteSessionInRedis(session);
+        redisMethods.deleteInRedis(session, session.getId());
         sessionRepo.delete(session);
 
         return "Logged out and session ended";
@@ -144,18 +146,25 @@ public class CustomerService {
             throw new RuntimeException("Refresh token expired, please log in again");
         }
 
-        customerRedisService.deleteSessionInRedis(oldsession);
+        redisMethods.deleteInRedis(oldsession, oldsession.getId());
         sessionRepo.delete(oldsession);
 
         String newAuthKey= authKeyGenerator.generate();
         String newRefreshToken=refreshTokenGenerator.generate();
         AuthSession newSession=new AuthSession(oldsession.getUserId(), newAuthKey,newRefreshToken);
         sessionRepo.save(newSession);
-        customerRedisService.sessionInRedis(newSession);
+        redisMethods.addInRedis(newSession,newSession.getId().toString(),259200);
+
 
         return "session refreshed with "+ "authKey "+ newAuthKey + " refreshToken "+ newRefreshToken;
 
 
+    }
+
+    public Customer getCustomerByAuthKey(String authKey){
+        AuthSession session = sessionRepo.findByAuthKey(authKey)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+        return customerRepo.getCustomerById(session.getUserId());
     }
 
 

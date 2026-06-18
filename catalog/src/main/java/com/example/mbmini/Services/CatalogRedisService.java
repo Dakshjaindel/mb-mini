@@ -3,6 +3,7 @@ package com.example.mbmini.Services;
 
 import com.example.mbmini.Entities.Catalog;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -16,8 +17,9 @@ import com.example.mbminiframework.RedisPackage.RedisMethods;
 @RequiredArgsConstructor
 @Service
 public class CatalogRedisService {
-    private final JedisPool jedisPool;
-    private final RedisMethods redisMethods;
+
+    @Autowired
+    private  RedisMethods redisMethods;
     public void Create(Catalog catalog,Long Id){
         redisMethods.addInRedis(catalog,Id.toString());
     }
@@ -25,38 +27,21 @@ public class CatalogRedisService {
     public void Update(long Id, String productName, Integer quantity, BigDecimal price, Boolean isActive){
         ObjectMapper mapper= new ObjectMapper();
         String key= String.valueOf(Id);
-        try (Jedis jedis=jedisPool.getResource()){
-            String existing = jedis.get(key);
-            if (existing == null) throw new RuntimeException("Key not found in Redis: " + key);
-
-            Catalog catalog = mapper.readValue(existing, Catalog.class);
-            if (productName != null) catalog.setProductName(productName);
-            if (quantity != null) catalog.setQuantity(quantity);
-            if (price != null) catalog.setPrice(price);
-            if (isActive != null) catalog.setActive(isActive);
-
-            String value= mapper.writeValueAsString(catalog);
-            jedis.set(key,value);
-        }
+        Catalog catalog =redisMethods.getFromRedis(Id,Catalog.class);
+        if (productName != null) catalog.setProductName(productName);
+        if (quantity != null) catalog.setQuantity(quantity);
+        if (price != null) catalog.setPrice(price);
+        if (isActive != null) catalog.setActive(isActive);
+        redisMethods.addInRedis(catalog, catalog.getId().toString());
     }
 
-    public String Get(long Id){
-        String key=String.valueOf(Id);
-        try (Jedis jedis=jedisPool.getResource()){
-            return jedis.get(key);
-        }
-    }
+
 
     public void refreshCache(List<Catalog> catalogs){
-        ObjectMapper mapper=new ObjectMapper();
-        try (Jedis jedis=jedisPool.getResource()){
-            for (Catalog catalog: catalogs){
-                String data=mapper.writeValueAsString(catalog);
-                jedis.set(String.valueOf(catalog.getId()),data);
+        for (Catalog catalog: catalogs){
+                redisMethods.addInRedis(catalog,catalog.getId().toString());
             }
-        } catch (Exception e){
-            throw new RuntimeException("Error refresihng cache",e);
-        }
+
     }
 
 

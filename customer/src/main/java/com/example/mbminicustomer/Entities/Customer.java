@@ -89,7 +89,7 @@ public class Customer {
     @PrePersist
     @PreUpdate
     public void encryptPass(){
-        if (this.password!=null){
+        if (this.password != null && !this.password.startsWith("$2a$") && !this.password.startsWith("$2b$") && !this.password.startsWith("$2y$")){
             BCryptPasswordEncoder encoder=new BCryptPasswordEncoder();
             this.password=encoder.encode(this.password);
         }

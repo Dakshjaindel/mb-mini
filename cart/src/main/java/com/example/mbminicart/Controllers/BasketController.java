@@ -2,6 +2,7 @@ package com.example.mbminicart.Controllers;
 
 
 import com.example.mbminicart.DTOs.BasketAddDTO;
+import com.example.mbminicart.DTOs.BasketFinalizeDTO;
 import com.example.mbminicart.DTOs.CreditAddDTO;
 import com.example.mbminicart.DTOs.NewBasketDTO;
 import com.example.mbminicart.Entities.BasketItem;
@@ -38,6 +39,11 @@ public class BasketController {
         return service.BasketAdd(basketAddDTO.getBasketId(),
                 basketAddDTO.getProductId(),
                 basketAddDTO.getQuantity());
+    }
+
+    @PostMapping({"/baskets/finalize"})
+    public @ResponseBody String finalizeBasket(@Valid @RequestBody BasketFinalizeDTO basketFinalizeDTO){
+        return service.finalizeBasket(basketFinalizeDTO.getBasketId());
     }
 
 }

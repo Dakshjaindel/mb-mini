@@ -3,6 +3,7 @@ package com.example.mbmini.Services;
 
 import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.RepoConnections.JPARepo;
+import com.example.mbminiframework.RedisPackage.RedisMethods;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
@@ -14,17 +15,20 @@ import java.util.List;
 
 @Service
 public class JPAService {
-    private final JPARepo repository;
+    @Autowired
+    private JPARepo repository;
+
+    @Autowired
+    private RedisMethods redisMethods;
+
 
     @Autowired
     private CatalogRedisService catalogRedisService;
 
 
-    public JPAService(JPARepo repository) {this.repository = repository;}
-
     public String create(Catalog catalog){
         Catalog saved= repository.save(catalog);
-        catalogRedisService.Create(saved,saved.getId());
+        redisMethods.addInRedis(saved,saved.getId().toString());
         String key= String.valueOf(saved.getId());
         return "Saved with the Id"+ key;
     }
@@ -51,7 +55,7 @@ public class JPAService {
 
     public Catalog Get(long Id){
         ObjectMapper mapper= new ObjectMapper();
-        String cached= catalogRedisService.Get(Id);
+        String cached= String.valueOf(redisMethods.getFromRedis(Id, Catalog.class));
 
         if (cached!= null){
             Catalog cachedCatalog= mapper.readValue(cached, Catalog.class);

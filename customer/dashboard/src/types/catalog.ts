@@ -1,5 +1,6 @@
 export interface Catalog {
   id: number
+  Id?: number
   productName: string
   quantity: number
   price: number

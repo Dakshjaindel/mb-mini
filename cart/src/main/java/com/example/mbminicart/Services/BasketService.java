@@ -15,29 +15,34 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class BasketService {
 
-    private final LogRepo logRepo;
-    private final BasketRepo basketRepo;
-    private final ItemRepo itemRepo;
-    private final CreditRepo creditRepo;
-    private final NetCreditRepo netCreditRepo;
+    @Autowired
+    private LogRepo logRepo;
 
-    private final JPAService catalogService;
+    @Autowired
+    private BasketRepo basketRepo;
 
-    private final CustomerService customerService;
+    @Autowired
+    private ItemRepo itemRepo;
 
-    public BasketService(BasketRepo repository, BasketRepo basketRepo, ItemRepo itemRepo, CatalogClient catalogClient, CustomerClient customerClient, LogRepo logRepo, CreditRepo creditRepo, NetCreditRepo netCreditRepo, JPAService catalogService, CustomerService customerService) {
-        this.basketRepo = basketRepo;
-        this.itemRepo = itemRepo;
-        this.logRepo = logRepo;
-        this.creditRepo = creditRepo;
-        this.netCreditRepo = netCreditRepo;
-        this.catalogService = catalogService;
-        this.customerService = customerService;
-    }
+    @Autowired
+    private CreditRepo creditRepo;
+
+    @Autowired
+    private NetCreditRepo netCreditRepo;
+
+    @Autowired
+    private JPAService catalogService;
+
+    @Autowired
+    private CustomerService customerService;
+
+
+
 
     public String newBasket(Long userId, Date date,Integer flag){
         Basket basket = new Basket(userId,date,flag,0);
@@ -112,7 +117,59 @@ public class BasketService {
         return "Credit added to userId " + customerId + "'s wallet, and added to net credit";
     }
 
+    public String finalizeBasket(Long basketId){
+        Basket basket= basketRepo.getBasketById(basketId);
+        if (basket.getFlag() != null && basket.getFlag() == 2){
+            throw new RuntimeException("Basket already finalized");
+        }
+        if (basket.getQuantity() == null || basket.getQuantity() <= 0){
+            throw new RuntimeException("Basket is empty");
+        }
 
+        List<BasketItem> items = itemRepo.findByBasketIdAndFlag(basketId, 1);
+        if (items.isEmpty()){
+            throw new RuntimeException("No active items in basket");
+        }
 
+        Long customerId = basket.getUserId();
+        CustomerNetCredit netCredit = netCreditRepo.getCustomerNetCreditByCustomerId(customerId);
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (BasketItem item : items){
+            Catalog catalog = catalogService.Get(item.getProductId());
+            total = total.add(catalog.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+
+        if (netCredit.getWalletCredit().compareTo(total) < 0){
+            throw new RuntimeException("Insufficient wallet balance to finalize order");
+        }
+
+        for (BasketItem item : items){
+            Catalog catalog = catalogService.Get(item.getProductId());
+            if (catalog.getQuantity() < item.getQuantity()){
+                throw new RuntimeException("Product " + catalog.getProductName() + " is out of stock");
+            }
+            catalogService.Update(
+                    catalog.getId(),
+                    null,
+                    catalog.getQuantity() - item.getQuantity(),
+                    null,
+                    null
+            );
+        }
+
+        netCredit.setWalletCredit(netCredit.getWalletCredit().subtract(total));
+        netCreditRepo.save(netCredit);
+        basket.setFlag(2);
+        basketRepo.save(basket);
+
+        for (BasketItem item : items){
+            item.setFlag(2);
+            itemRepo.save(item);
+        }
+
+        logRepo.save(new Log("Order finalized for basketId " + basketId + " total " + total));
+        return "Order finalized successfully. Total charged: " + total;
+    }
 
 }

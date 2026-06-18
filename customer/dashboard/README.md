@@ -1,31 +1,54 @@
-# Catalog Dashboard
+# MB Mini Platform Dashboard
 
-React dashboard for the mb-mini catalog API.
+Unified React dashboard connecting all three backend services:
+
+| Service  | Port | Proxy prefix      |
+|----------|------|-------------------|
+| Catalog  | 8080 | `/api/catalog`    |
+| Customer | 8081 | `/api/customer`   |
+| Cart     | 8082 | `/api/cart`       |
 
 ## Prerequisites
 
-- Java 17+ with the Spring Boot API running on `http://localhost:8080`
-- MySQL and Redis configured per the main project
+- Node.js 18+
+- MySQL and Redis running locally
+- All three Spring Boot services started
 
-## Run
+## Start backends
+
+In separate terminals:
 
 ```bash
-# From project root — start the API
-./mvnw spring-boot:run
+# Catalog (port 8080)
+cd catalog && ./mvnw spring-boot:run
 
-# In another terminal — start the dashboard
-cd dashboard
+# Customer (port 8081)
+cd customer && ./mvnw spring-boot:run
+
+# Cart (port 8082)
+cd cart && ./mvnw spring-boot:run
+```
+
+## Start dashboard
+
+```bash
+cd customer/dashboard
 npm install
 npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173).
 
-The Vite dev server proxies `/data` requests to the API.
-
 ## Features
 
-- View all catalog products with stats
-- Create and edit products
-- Refresh Redis cache from MySQL
-- Real-time error handling from API validation
+- **Auth** — phone lookup, login, register, logout (customer service)
+- **Catalog** — browse active products (catalog service)
+- **Basket** — create basket, add/update items, wallet top-up (cart service)
+- **Checkout** — finalize order (deducts wallet, updates stock)
+
+## Flow
+
+1. Enter phone → login or register
+2. Browse catalog and add products to basket
+3. Top up wallet credit if needed
+4. Finalize order to complete checkout

@@ -67,5 +67,17 @@ public class CustomerController {
         return service.refresh(refreshToken);
     }
 
+    @GetMapping({"/customers/me"})
+    public @ResponseBody CustomerMeDTO me(@RequestHeader("Authorization") String authHeader){
+        String authKey = authHeader.replace("Bearer ", "");
+        Customer customer = service.getCustomerByAuthKey(authKey);
+        return new CustomerMeDTO(
+                customer.getId(),
+                customer.getName(),
+                customer.getPhoneNo(),
+                customer.getEmail()
+        );
+    }
+
 
 }
