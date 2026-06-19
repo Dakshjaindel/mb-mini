@@ -1,26 +1,21 @@
 package com.example.mbminicustomer.Entities;
 
 
+import com.example.mbminiframework.Auditing.Auditable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import org.antlr.v4.runtime.misc.NotNull;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
-import java.time.LocalDateTime;
 
 @Data
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 
-public class Customer {
+public class Customer extends Auditable {
 
     @Id
     @GeneratedValue
@@ -56,21 +51,6 @@ public class Customer {
     @Column
     private Long pincode;
 
-    @Column(name = "created_on")
-    @CreatedDate
-    private LocalDateTime created_on;
-
-    @Column(name = "created_by",updatable = true)
-    @CreatedBy
-    private String created_by;
-
-    @Column(name = "modified_on")
-    @LastModifiedDate
-    private LocalDateTime modified_on;
-
-    @Column(name = "modified_by",updatable = true)
-    @LastModifiedBy
-    private String modified_by;
 
     protected Customer(){}
 
@@ -93,10 +73,6 @@ public class Customer {
             BCryptPasswordEncoder encoder=new BCryptPasswordEncoder();
             this.password=encoder.encode(this.password);
         }
-    }
-
-    public void setCreatedBy(String createdBy) {
-        this.created_by = createdBy;
     }
 
 }

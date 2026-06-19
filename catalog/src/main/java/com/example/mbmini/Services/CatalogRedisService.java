@@ -24,10 +24,10 @@ public class CatalogRedisService {
         redisMethods.addInRedis(catalog,Id.toString());
     }
 
-    public void Update(long Id, String productName, Integer quantity, BigDecimal price, Boolean isActive){
+    public void Update(Long Id, String productName, Integer quantity, BigDecimal price, Boolean isActive){
         ObjectMapper mapper= new ObjectMapper();
         String key= String.valueOf(Id);
-        Catalog catalog =redisMethods.getFromRedis(Id,Catalog.class);
+        Catalog catalog =redisMethods.getFromRedis(Id.toString(),Catalog.class);
         if (productName != null) catalog.setProductName(productName);
         if (quantity != null) catalog.setQuantity(quantity);
         if (price != null) catalog.setPrice(price);

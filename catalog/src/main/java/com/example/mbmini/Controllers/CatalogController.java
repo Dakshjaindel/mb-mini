@@ -45,7 +45,7 @@ public class CatalogController {
         return service.Get(id);
     }
 
-    @PostMapping({"/catalog/cache/refresh"})
+    @PostMapping({"/consumer/catalog/cache/refresh"})
     public String cacheRefresh(){
         return service.cacheRefresh();
     }

@@ -1,24 +1,15 @@
 package com.example.mbmini.Entities;
 
 
+import com.example.mbminiframework.Auditing.Auditable;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Min;
-import lombok.Setter;
-import org.antlr.v4.runtime.misc.NotNull;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class Catalog {
+public class Catalog extends Auditable {
 
     @Id
     @GeneratedValue
@@ -37,21 +28,7 @@ public class Catalog {
     @Column
     private Boolean isActive;
 
-    @Column(name = "created_on")
-    @CreatedDate
-    private LocalDateTime created_on;
 
-    @Column(name = "created_by")
-    @CreatedBy
-    private String created_by;
-
-    @Column(name = "modified_on")
-    @LastModifiedDate
-    private LocalDateTime modified_on;
-
-    @Column(name = "modified_by")
-    @LastModifiedBy
-    private String modified_by;
 
     protected Catalog(){}
     public  Catalog(String productName,Integer quantity,BigDecimal price, Boolean isActive){

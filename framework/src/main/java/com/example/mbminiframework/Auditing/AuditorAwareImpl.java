@@ -1,4 +1,4 @@
-package com.example.mbminiframework.Configs;
+package com.example.mbminiframework.Auditing;
 
 import org.springframework.data.domain.AuditorAware;
 

@@ -53,9 +53,9 @@ public class JPAService {
         return "Updated Successfully";
     }
 
-    public Catalog Get(long Id){
+    public Catalog Get(Long Id){
         ObjectMapper mapper= new ObjectMapper();
-        String cached= String.valueOf(redisMethods.getFromRedis(Id, Catalog.class));
+        String cached= String.valueOf(redisMethods.getFromRedis(Id.toString(), Catalog.class));
 
         if (cached!= null){
             Catalog cachedCatalog= mapper.readValue(cached, Catalog.class);

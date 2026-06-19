@@ -1,22 +1,18 @@
 package com.example.mbminicart.Entities;
 
 
+import com.example.mbminiframework.Auditing.Auditable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class Credits {
+public class Credits extends Auditable {
     @Id
     @GeneratedValue
     private Long Id;
@@ -34,21 +30,6 @@ public class Credits {
     @Column
     private String type;
 
-    @Column(name = "Created by",updatable = true)
-    @CreatedBy
-    private String createdBy;
-
-    @Column(name="Created On",updatable = false)
-    @CreatedDate
-    private LocalDateTime createdOn;
-
-    @Column(name = "Modified By",updatable = true)
-    @LastModifiedBy
-    private String modifiedBy;
-
-    @Column(name="Modified On",updatable = true)
-    @LastModifiedDate
-    private LocalDateTime modifiedOn;
 
     protected Credits(){}
 

@@ -4,7 +4,7 @@ package com.example.mbminicustomer.Services;
 import com.example.mbminicustomer.*;
 import com.example.mbminicustomer.ConfigsRepo.CustomerRepo;
 import com.example.mbminicustomer.ConfigsRepo.SessionRepo;
-import com.example.mbminicustomer.Entities.AuthSession;
+import com.example.mbminiframework.Entity.AuthSession;
 import com.example.mbminicustomer.Entities.Customer;
 import com.example.mbminiframework.RedisPackage.RedisMethods;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +58,7 @@ public class CustomerService {
 
             AuthSession authSession= new AuthSession(customer.getId(),authKey,refreshToken);
             sessionRepo.save(authSession);
-            redisMethods.addInRedis(authSession,authSession.getId().toString(),259200);
+            redisMethods.addInRedis(authSession,authSession.getAuthKey(),259200);
             AuditorAwareImpl.clear();
             return "Logging In ------- Started Auth Session " + "AuthKey: " + authKey + " | RefreshToken: " + refreshToken;
         }
@@ -88,7 +88,7 @@ public class CustomerService {
 
         sessionRepo.save(authSession);
 
-        redisMethods.addInRedis(authSession,authSession.getId().toString(),2952000);
+        redisMethods.addInRedis(authSession, authSession.getAuthKey(),2952000);
 
         return "Saved with the Id"+ key +" and Auth Session Started AuthKey: " + authKey + " | RefreshToken: " + refreshToken;
     }
@@ -153,7 +153,7 @@ public class CustomerService {
         String newRefreshToken=refreshTokenGenerator.generate();
         AuthSession newSession=new AuthSession(oldsession.getUserId(), newAuthKey,newRefreshToken);
         sessionRepo.save(newSession);
-        redisMethods.addInRedis(newSession,newSession.getId().toString(),259200);
+        redisMethods.addInRedis(newSession,newSession.getAuthKey(),259200);
 
 
         return "session refreshed with "+ "authKey "+ newAuthKey + " refreshToken "+ newRefreshToken;

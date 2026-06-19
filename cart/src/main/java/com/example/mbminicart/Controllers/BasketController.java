@@ -21,12 +21,12 @@ public class BasketController {
     @Autowired
     private BasketService service;
 
-    @PostMapping({"/baskets"})
+    @PostMapping({"/consumer/baskets"})
     public @ResponseBody String newBasket(@Valid @RequestBody NewBasketDTO newBasketDTO){
         return service.newBasket(newBasketDTO.getUserId(),newBasketDTO.getDate(),newBasketDTO.getFlag());
     }
 
-    @PostMapping({"/credits"})
+    @PostMapping({"/consumer/credits"})
     public @ResponseBody String creditAdd(@Valid @RequestBody CreditAddDTO creditAddDTO){
         return service.customerAddCredit(creditAddDTO.getCustomerId(),
                 creditAddDTO.getCreditAmount(),
@@ -34,14 +34,14 @@ public class BasketController {
                 creditAddDTO.getFlag());
     }
 
-    @PostMapping({"/baskets/itemAdd"})
+    @PostMapping({"/consumer/baskets/itemAdd"})
     public @ResponseBody String basketAdd(@Valid @RequestBody BasketAddDTO basketAddDTO){
         return service.BasketAdd(basketAddDTO.getBasketId(),
                 basketAddDTO.getProductId(),
                 basketAddDTO.getQuantity());
     }
 
-    @PostMapping({"/baskets/finalize"})
+    @PostMapping({"/consumer/baskets/finalize"})
     public @ResponseBody String finalizeBasket(@Valid @RequestBody BasketFinalizeDTO basketFinalizeDTO){
         return service.finalizeBasket(basketFinalizeDTO.getBasketId());
     }

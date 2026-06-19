@@ -56,7 +56,7 @@ public class CustomerController {
         return service.passwordUpdate(updatePassDTO.getId(),updatePassDTO.getNewPass());
     }
 
-    @PostMapping({"/customers/logout"})
+    @PostMapping({"/consumer/customers/logout"})
     public @ResponseBody String logout(@RequestHeader("Authorization") String authHeader){
         String authKey = authHeader.replace("Bearer ", "");
         return service.logout(authKey);
