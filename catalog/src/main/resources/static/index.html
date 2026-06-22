@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MB Mini Customer</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">MB</div>
+        <div>
+          <h1>Mini Customer</h1>
+          <p>Account portal</p>
+        </div>
+      </div>
+      <nav class="steps">
+        <div class="step active" data-step="phone">
+          <span class="step-num">1</span>
+          <span>Phone number</span>
+        </div>
+        <div class="step" data-step="auth">
+          <span class="step-num">2</span>
+          <span id="step-auth-label">Login or Register</span>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <p>Secure customer access</p>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div id="alert" class="alert hidden" role="alert"></div>
+
+      <!-- Step 1: Phone -->
+      <section id="view-phone" class="card view active">
+        <header class="card-header">
+          <h2>Welcome</h2>
+          <p>Enter your 10-digit phone number to continue.</p>
+        </header>
+        <form id="phone-form" class="form">
+          <label for="phone-input">Phone number</label>
+          <div class="input-group">
+            <span class="prefix">+91</span>
+            <input
+              id="phone-input"
+              type="tel"
+              inputmode="numeric"
+              maxlength="10"
+              placeholder="9876543210"
+              autocomplete="tel"
+              required
+            >
+          </div>
+          <button type="submit" class="btn btn-primary" id="phone-submit">
+            <span class="btn-text">Continue</span>
+            <span class="spinner hidden"></span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Step 2a: Login -->
+      <section id="view-login" class="card view hidden">
+        <header class="card-header">
+          <h2>Login</h2>
+          <p>Account found for <strong id="login-phone-display"></strong>. Enter your password.</p>
+        </header>
+        <form id="login-form" class="form">
+          <input type="hidden" id="login-phone" name="PhoneNo">
+          <label for="login-password">Password</label>
+          <input
+            id="login-password"
+            type="password"
+            placeholder="Enter password"
+            autocomplete="current-password"
+            required
+          >
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost" id="login-back">Change number</button>
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-text">Sign in</span>
+              <span class="spinner hidden"></span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Step 2b: Register -->
+      <section id="view-register" class="card view hidden">
+        <header class="card-header">
+          <h2>Create account</h2>
+          <p>No account for <strong id="register-phone-display"></strong>. Fill in your details.</p>
+        </header>
+        <form id="register-form" class="form form-grid">
+          <input type="hidden" id="register-phone" name="PhoneNo">
+          <div class="field">
+            <label for="register-name">Full name</label>
+            <input id="register-name" type="text" placeholder="John Doe" required>
+          </div>
+          <div class="field">
+            <label for="register-email">Email</label>
+            <input id="register-email" type="email" placeholder="john@example.com" required>
+          </div>
+          <div class="field">
+            <label for="register-password">Password</label>
+            <input id="register-password" type="password" placeholder="Create a password" required>
+          </div>
+          <div class="field">
+            <label for="register-house">House no.</label>
+            <input id="register-house" type="number" placeholder="42">
+          </div>
+          <div class="field">
+            <label for="register-locality">Locality</label>
+            <input id="register-locality" type="text" placeholder="Green Park">
+          </div>
+          <div class="field">
+            <label for="register-city">City</label>
+            <input id="register-city" type="text" placeholder="Mumbai">
+          </div>
+          <div class="field">
+            <label for="register-pincode">Pincode</label>
+            <input id="register-pincode" type="number" placeholder="400001">
+          </div>
+          <div class="form-actions full-width">
+            <button type="button" class="btn btn-ghost" id="register-back">Change number</button>
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-text">Register</span>
+              <span class="spinner hidden"></span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Success -->
+      <section id="view-success" class="card view hidden">
+        <div class="success-icon">✓</div>
+        <header class="card-header centered">
+          <h2 id="success-title">Success</h2>
+          <p id="success-message"></p>
+        </header>
+        <button type="button" class="btn btn-primary" id="success-restart">Start over</button>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
