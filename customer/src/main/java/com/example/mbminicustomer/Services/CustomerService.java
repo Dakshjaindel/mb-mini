@@ -3,14 +3,18 @@ package com.example.mbminicustomer.Services;
 
 import com.example.mbminicustomer.*;
 import com.example.mbminicustomer.ConfigsRepo.CustomerRepo;
+import com.example.mbminicustomer.ConfigsRepo.NetCreditRepo;
 import com.example.mbminicustomer.ConfigsRepo.SessionRepo;
+import com.example.mbminicustomer.Entities.CustomerNetCredit;
 import com.example.mbminiframework.Entity.AuthSession;
 import com.example.mbminicustomer.Entities.Customer;
 import com.example.mbminiframework.RedisPackage.RedisMethods;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
@@ -32,6 +36,9 @@ public class CustomerService {
 
     @Autowired
     private RedisMethods redisMethods;
+
+    @Autowired
+    private NetCreditRepo netCreditRepo;
 
 
 
@@ -68,8 +75,11 @@ public class CustomerService {
 
     }
 
+    @Transactional
     public String Register(Customer customer){
-        Customer saved= customerRepo.save(customer);
+        Customer saved= customerRepo.saveAndFlush(customer);
+        System.out.println("ID: " + saved.getId());
+
 
         saved.setCreatedBy(String.valueOf(saved.getId()));
 
@@ -85,6 +95,10 @@ public class CustomerService {
         String refreshToken = refreshTokenGenerator.generate();
 
         AuthSession authSession= new AuthSession(audited.getId(),authKey,refreshToken);
+
+        CustomerNetCredit customerNetCredit=new CustomerNetCredit(audited.getId(), BigDecimal.ZERO,1);
+        netCreditRepo.save(customerNetCredit);
+
 
         sessionRepo.save(authSession);
 

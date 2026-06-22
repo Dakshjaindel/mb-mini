@@ -19,46 +19,41 @@ public class AuthInterceptor implements HandlerInterceptor {
     private RedisMethods redisMethods;
 
 
-
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
 
         String token = request.getHeader("AuthKey");
 
-        //  Missing token
         if (token == null || token.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"error\": \"Missing AuthKey header\"}");
             return false;
         }
 
-        // 🔍 Fetch from Redis
         AuthSession authSession;
         try {
             authSession = redisMethods.getFromRedis(token, AuthSession.class);
         } catch (RuntimeException e) {
-            // Token not found in Redis
+
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"error\": \"Invalid or expired token\"}");
             return false;
         }
 
-        // Token expired
         if (authSession.getAuthKeyExpiresAt().isBefore(LocalDateTime.now())) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"error\": \"Token expired, please refresh\"}");
             return false;
         }
 
-        // Valid — set user for auditing
+        request.setAttribute("userId",authSession.getUserId());
+
         String userId = authSession.getUserId().toString();
         AuditorAwareImpl.setCurrentUser(userId);
 
         return true;
     }
-
-
 
 
     @Override

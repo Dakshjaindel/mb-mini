@@ -10,10 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BasketAddDTO {
-
-    @NotNull
-    private Long basketId;
-
     @NotNull
     private Long productId;
 

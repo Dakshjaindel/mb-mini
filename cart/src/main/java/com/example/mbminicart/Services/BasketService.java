@@ -3,14 +3,14 @@ package com.example.mbminicart.Services;
 
 import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.Services.JPAService;
-import com.example.mbminicart.Configs.CatalogClient;
-import com.example.mbminicart.Configs.CustomerClient;
 import com.example.mbminicart.Entities.*;
 import com.example.mbminicart.Repos.*;
+import com.example.mbminicustomer.ConfigsRepo.NetCreditRepo;
+import com.example.mbminicustomer.Entities.CustomerNetCredit;
 import com.example.mbminicustomer.Services.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
@@ -30,7 +30,7 @@ public class BasketService {
     private ItemRepo itemRepo;
 
     @Autowired
-    private CreditRepo creditRepo;
+    private com.example.mbminicustomer.ConfigsRepo.CreditRepo creditRepo;
 
     @Autowired
     private NetCreditRepo netCreditRepo;
@@ -55,17 +55,29 @@ public class BasketService {
         return "new basket made with basketID "+ basket.getId();
     }
 
-    public String BasketAdd(Long basketId, Long productId, Integer quantity){
+    public String BasketAdd(Long userId, Long productId, Integer quantity){
+
+        Basket basket = basketRepo.findByUserId(userId)
+                .orElseGet(() -> {
+                    Basket newBasket = new Basket(userId, new Date(), 1, 0);
+                    basketRepo.save(newBasket);
+                    return newBasket;
+                });
+        Long basketId = basket.getId();
+
         Catalog catalog= catalogService.Get(productId);
-        if (catalog.getQuantity()<quantity){
-            throw new RuntimeException("Quantity asked is not in stock");
+
+        Integer totalCatalogInDemand= itemRepo.CatalogDemand(productId);
+        if (quantity+totalCatalogInDemand>catalog.getQuantity()){
+            throw new RuntimeException("Not enough Quantity in stock");
         }
-        Basket basket= basketRepo.getBasketById(basketId);
+
         Long customerId= basket.getUserId();
         CustomerNetCredit netCredit = netCreditRepo.getCustomerNetCreditByCustomerId(customerId);
+        BigDecimal totalCostOfWallet = itemRepo.sumWalletCostByBasketId(basketId);
         BigDecimal walletAmount =netCredit.getWalletCredit();
-        BigDecimal productprice = catalog.getPrice().multiply(BigDecimal.valueOf(quantity));
-        if (walletAmount.compareTo(productprice)<0){
+        BigDecimal productPrice = catalog.getPrice().multiply(BigDecimal.valueOf(quantity));
+        if (totalCostOfWallet.add(productPrice).compareTo(walletAmount)>0){
             throw new RuntimeException(" Not enough wallet amount for the product/ quantity. Please recharge");
         }
         boolean itemExists= itemRepo.existsBasketItemsByBasketIdAndProductId(basketId,productId);
@@ -106,10 +118,14 @@ public class BasketService {
     }
 
 
+    @Transactional
     public String customerAddCredit(Long customerId, BigDecimal creditAmount,String type,Integer flag ){
-        Credits credits=new Credits(customerId,creditAmount,type,flag);
+        com.example.mbminicustomer.Entities.Credits credits=new com.example.mbminicustomer.Entities.Credits(customerId,creditAmount,type,flag);
         creditRepo.save(credits);
         CustomerNetCredit netCredit= netCreditRepo.getCustomerNetCreditByCustomerId(customerId);
+        if (netCredit == null) {
+            throw new RuntimeException("No wallet found for customerId: " + customerId);
+        }
         BigDecimal newCredit=netCredit.getWalletCredit().add(creditAmount);
         netCredit.setWalletCredit(newCredit);
         netCreditRepo.save(netCredit);

@@ -1,9 +1,7 @@
-package com.example.mbminicart.Entities;
-
+package com.example.mbminicustomer.Entities;
 
 import com.example.mbminiframework.Auditing.Auditable;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import lombok.Data;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -12,34 +10,27 @@ import java.math.BigDecimal;
 @Data
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class Credits extends Auditable {
+public class CustomerNetCredit extends Auditable {
     @Id
     @GeneratedValue
     private Long Id;
 
     @Column
-    private Integer flag;
-
-    @Column
     private Long customerId;
 
     @Column
-    @Min(0)
-    private BigDecimal creditAmount;
+    private BigDecimal walletCredit;
 
     @Column
-    private String type;
+    private Integer flag;
 
 
-    protected Credits(){}
-
-    public Credits(Long customerId,BigDecimal creditAmount, String type, Integer flag){
-        this.customerId=customerId;
-        this.creditAmount=creditAmount;
-        this.type=type;
-        this.flag=flag;
-
+    protected CustomerNetCredit(){
     }
 
-
+    public  CustomerNetCredit(Long customerId, BigDecimal walletCredit, Integer flag ){
+        this.customerId=customerId;
+        this.walletCredit=walletCredit;
+        this.flag=flag;
+    }
 }

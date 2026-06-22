@@ -11,12 +11,21 @@ import redis.clients.jedis.JedisPool;
 @Component
 public class RedisMethods {
 
+
     private final JedisPool jedisPool;
+    private final ObjectMapper mapper;
+
+    public RedisMethods(JedisPool jedisPool) {
+        this.jedisPool = jedisPool;
+        this.mapper = new ObjectMapper();
+        this.mapper.registerModule(new JavaTimeModule());
+        this.mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
+
+
 
     public <T> void addInRedis(T adding, String Id, long seconds) {
-        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        mapper.registerModule(new JavaTimeModule()); // ✅ add this
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // ✅ store as string not array
+
         try (Jedis jedis = jedisPool.getResource()) {
             String value = mapper.writeValueAsString(adding);
             String key = adding.getClass().getName() + "." + Id;
@@ -38,12 +47,9 @@ public class RedisMethods {
         }
     }
 
-    public RedisMethods(JedisPool jedisPool) {
-        this.jedisPool = jedisPool;
-    }
 
     public <T> void addInRedis(T adding,String Id){
-        com.fasterxml.jackson.databind.ObjectMapper mapper= new com.fasterxml.jackson.databind.ObjectMapper();
+
         try(Jedis jedis=jedisPool.getResource()){
             String value=mapper.writeValueAsString(adding);
             String key = adding.getClass().getName()+"."+Id;
@@ -54,13 +60,12 @@ public class RedisMethods {
         }
     }
 
+
     public <T> T getFromRedis(String id, Class<T> clazz) {
-        com.fasterxml.jackson.databind.ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule()); // ✅ add this — missing!
         String key = clazz.getName() + "." + id;
         try (Jedis jedis = jedisPool.getResource()) {
             String existing = jedis.get(key);
-            if (existing == null) throw new RuntimeException("Key not found in Redis: " + key);
+            if (existing == null) return null;
             return mapper.readValue(existing, clazz);
         } catch (RuntimeException e) {
             throw e;
@@ -68,6 +73,4 @@ public class RedisMethods {
             throw new RuntimeException("Redis error: " + e.getMessage());
         }
     }
-
-
 }

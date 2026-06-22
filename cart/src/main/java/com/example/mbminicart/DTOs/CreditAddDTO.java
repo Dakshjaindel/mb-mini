@@ -15,9 +15,6 @@ import java.math.BigDecimal;
 public class CreditAddDTO {
 
     @NotNull
-    private Long customerId;
-
-    @NotNull
     @Min(0)
     private BigDecimal creditAmount;
 

@@ -53,26 +53,20 @@ public class JPAService {
         return "Updated Successfully";
     }
 
-    public Catalog Get(Long Id){
-        ObjectMapper mapper= new ObjectMapper();
-        String cached= String.valueOf(redisMethods.getFromRedis(Id.toString(), Catalog.class));
+    public Catalog Get(Long id) {
+        // 1. Try Redis
+        Catalog catalog = redisMethods.getFromRedis(id.toString(), Catalog.class);
 
-        if (cached!= null){
-            Catalog cachedCatalog= mapper.readValue(cached, Catalog.class);
-            return cachedCatalog;
-        }
-        String needed= String.valueOf(Id);
-        Catalog catalog = repository.findById(Id).orElseThrow(()->new RuntimeException("Catalog not found with id: " + Id));
+        // 2. Fallback to SQL if not in Redis
+        if (catalog == null) {
+            catalog = repository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Catalog not found with id: " + id));
 
-        catalogRedisService.Create(catalog,catalog.getId());
-
-
-        try {
-            return catalog;
-        } catch (JacksonException e) {
-            throw new RuntimeException("Error converting to JSON", e);
+            // 3. Backfill Redis
+            catalogRedisService.Create(catalog, catalog.getId());
         }
 
+        return catalog;
     }
 
 

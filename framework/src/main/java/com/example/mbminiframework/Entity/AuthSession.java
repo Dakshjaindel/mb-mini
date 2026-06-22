@@ -19,11 +19,9 @@ import java.time.LocalDateTime;
 public class AuthSession extends Auditable {
 
 
-
     @Id
     @GeneratedValue
     private Long Id;
-
 
     @Column(nullable = false)
     private Long userId;
@@ -34,8 +32,6 @@ public class AuthSession extends Auditable {
     @Column(nullable = false,unique = true)
     private String refreshToken;
 
-
-
     @Column(nullable = false)
     private LocalDateTime authKeyExpiresAt;
 
@@ -43,8 +39,8 @@ public class AuthSession extends Auditable {
     private LocalDateTime refreshTokenExpiresAt;
 
 
-
     protected AuthSession() {}
+
 
     public AuthSession(Long UserId,String AuthKey,String refreshToken){
         this.userId =UserId;
@@ -53,7 +49,4 @@ public class AuthSession extends Auditable {
         this.authKeyExpiresAt=LocalDateTime.now().plusMinutes(30);
         this.refreshTokenExpiresAt=LocalDateTime.now().plusDays(5);
     }
-
-
-
 }

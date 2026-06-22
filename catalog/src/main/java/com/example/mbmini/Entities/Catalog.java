@@ -2,6 +2,8 @@ package com.example.mbmini.Entities;
 
 
 import com.example.mbminiframework.Auditing.Auditable;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -9,10 +11,14 @@ import java.math.BigDecimal;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+
 public class Catalog extends Auditable {
 
     @Id
     @GeneratedValue
+    @JsonProperty("id")
+
     private Long Id;
 
 
