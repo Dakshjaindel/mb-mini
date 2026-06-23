@@ -40,7 +40,9 @@ public class CustomerController {
                 registerDTO.getHouseNo(),
                 registerDTO.getLocality(),
                 registerDTO.getCity(),
-                registerDTO.getPincode()
+                registerDTO.getPincode(),
+                registerDTO.getLatitude(),
+                registerDTO.getLongitude()
 
         );
         return service.Register(customer);
@@ -48,12 +50,18 @@ public class CustomerController {
 
     @PutMapping({"/customers"})
     public @ResponseBody String updateCustomer(@Valid @RequestBody UpdateCustomerDTO updateCustomerDTO){
+
         return service.update(updateCustomerDTO.getCustomerId(), updateCustomerDTO.getNewName(),updateCustomerDTO.getNewEmail(), updateCustomerDTO.getNewHouseNO(), updateCustomerDTO.getNewLocality(),updateCustomerDTO.getNewCity(), updateCustomerDTO.getNewPincode());
     }
 
     @PutMapping({"/customers/password"})
     public @ResponseBody String updatePass(@Valid@RequestBody UpdatePassDTO updatePassDTO){
         return service.passwordUpdate(updatePassDTO.getId(),updatePassDTO.getNewPass());
+    }
+
+    @PutMapping({"/customer/address"})
+    public @ResponseBody String updateAddress(@Valid@RequestBody AddressUpdateDTO addressUpdateDTO){
+        return service.addressUpdate(addressUpdateDTO.getId(), addressUpdateDTO.getNewHouseNo(), addressUpdateDTO.getNewLocality(),addressUpdateDTO.getNewCity(),addressUpdateDTO.getNewPincode());
     }
 
     @PostMapping({"/consumer/customers/logout"})

@@ -10,12 +10,25 @@ import com.example.mbminiframework.Entity.AuthSession;
 import com.example.mbminicustomer.Entities.Customer;
 import com.example.mbminiframework.RedisPackage.RedisMethods;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class CustomerService {
@@ -39,6 +52,20 @@ public class CustomerService {
 
     @Autowired
     private NetCreditRepo netCreditRepo;
+
+    @Value("${ors.api.key}")
+    private  String apiKey;
+
+    @Value("${ors.api.url}")
+    private String orsUrl;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${pin.api.url}")
+    private String pinUrl;
+
+    private static final String NOMINATIM_FORWARD_URL = "https://openstreetmap.org";
 
 
 
@@ -77,6 +104,24 @@ public class CustomerService {
 
     @Transactional
     public String Register(Customer customer){
+        Long pincode=customer.getPincode();
+        String fullPinUrl = pinUrl + "/" + pincode;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+        headers.set("Accept", "application/json");
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<List> pinResponse = restTemplate.exchange(
+                fullPinUrl, HttpMethod.GET, entity, List.class);
+
+        Map firstResult = (Map) pinResponse.getBody().get(0);
+
+        if ("Error".equals(firstResult.get("Status"))) {
+            throw new RuntimeException("Invalid Pincode provided: " + pincode);
+        }
+
         Customer saved= customerRepo.saveAndFlush(customer);
         System.out.println("ID: " + saved.getId());
 
@@ -179,6 +224,56 @@ public class CustomerService {
         AuthSession session = sessionRepo.findByAuthKey(authKey)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
         return customerRepo.getCustomerById(session.getUserId());
+    }
+
+    public String addressUpdate(Long customerId,Long HouseNo, String Locality, String City, Long Pincode){
+        Customer customer=customerRepo.getCustomerById(customerId);
+
+        String fullPinUrl = pinUrl + "/" + Pincode;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+        headers.set("Accept", "application/json");
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<List> pinResponse = restTemplate.exchange(
+                fullPinUrl, HttpMethod.GET, entity, List.class);
+
+        Map firstResult = (Map) pinResponse.getBody().get(0);
+
+        if ("Error".equals(firstResult.get("Status"))) {
+            throw new RuntimeException("Invalid Pincode provided: " + Pincode);
+        }
+
+        String address = HouseNo + " " + Locality + ", " + City + " " + Pincode + ", India";
+        String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
+
+        String url = orsUrl+"?q=" + address.replace(" ", "+")
+                + "&key=" + apiKey
+                + "&limit=1"
+                + "&countrycode=in";
+        ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+        Map body = response.getBody();
+
+        List results = (List) body.get("results");
+        if (results == null || results.isEmpty()) {
+            throw new RuntimeException("Could not geocode address: " + address);
+        }
+
+        Map result = (Map) results.get(0);
+        Map geometry = (Map) result.get("geometry");
+
+        double latitude = ((Number) geometry.get("lat")).doubleValue();
+        double longitude = ((Number) geometry.get("lng")).doubleValue();
+
+        customer.setLatitude(latitude);
+        customer.setLongitude(longitude);
+        customerRepo.save(customer);
+
+        return "Address Updated";
+
+
     }
 
 

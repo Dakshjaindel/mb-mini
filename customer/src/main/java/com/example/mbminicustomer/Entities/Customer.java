@@ -51,18 +51,26 @@ public class Customer extends Auditable {
     @Column
     private Long pincode;
 
+    @Column
+    private Double Latitude;
+
+    @Column
+    private Double Longitude;
+
 
     protected Customer(){}
 
-    public Customer(String Name, String PhoneNo, String password, String Email, Long HouseNo, String Locality, String Ctiy, Long Pincode){
+    public Customer(String Name, String PhoneNo, String password, String Email, Long HouseNo, String Locality, String City, Long Pincode,Double latitude,Double longitude){
         this.name=Name;
         this.phoneNo=PhoneNo;
         this.password=password;
         this.email=Email;
         this.houseNo=HouseNo;
-        this.city=Ctiy;
+        this.city=City;
         this.pincode=Pincode;
         this.locality=Locality;
+        this.Latitude=latitude;
+        this.Longitude=longitude;
     }
 
 

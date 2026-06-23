@@ -42,4 +42,9 @@ public class RegisterDTO {
 
 
     private Long Pincode;
+
+    private Double latitude;
+
+    private Double longitude;
+
 }
