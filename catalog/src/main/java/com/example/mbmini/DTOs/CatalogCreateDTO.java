@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CatalogDTO {
+public class CatalogCreateDTO {
 
     @NotBlank(message = "Cant be blank")
     private String productName;

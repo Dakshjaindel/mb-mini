@@ -1,8 +1,9 @@
 package com.example.mbmini.Controllers;
 
 
+import com.example.mbmini.DTOs.CatalogGetAllDTO;
 import com.example.mbmini.Entities.Catalog;
-import com.example.mbmini.DTOs.CatalogDTO;
+import com.example.mbmini.DTOs.CatalogCreateDTO;
 import com.example.mbmini.DTOs.CatalogUpdateDTO;
 import com.example.mbmini.Services.JPAService;
 import jakarta.validation.Valid;
@@ -22,7 +23,7 @@ public class CatalogController {
     private JPAService service;
 
     @PostMapping({"/catalog"})
-    public @ResponseBody String create(@Valid @RequestBody CatalogDTO dto){
+    public @ResponseBody String create(@Valid @RequestBody CatalogCreateDTO dto){
         Catalog catalog= new Catalog(dto.getProductName(),
                 dto.getQuantity(),
                 dto.getPrice(),
@@ -35,9 +36,9 @@ public class CatalogController {
         service.Update(updateDTO.getId(),updateDTO.getProductName(), updateDTO.getQuantity(), updateDTO.getPrice(),updateDTO.getIsActive());
         return "Catalog updated from json body";
     }
-    @GetMapping({"/catalog"})
-    public List<Catalog> getAll() {
-        return service.findAll();
+    @GetMapping({"/catalog/all"})
+    public List<Catalog> getAll(@Valid@RequestBody CatalogGetAllDTO catalogGetAllDTO) {
+        return service.findAll(catalogGetAllDTO.getPageSize(), catalogGetAllDTO.getPageNo(),catalogGetAllDTO.getSimilar(),catalogGetAllDTO.getProductNameFilter(), catalogGetAllDTO.getQuantityFilter());
     }
 
     @GetMapping({"/catalog/{id}"})
@@ -49,6 +50,7 @@ public class CatalogController {
     public String cacheRefresh(){
         return service.cacheRefresh();
     }
+
 
 
 

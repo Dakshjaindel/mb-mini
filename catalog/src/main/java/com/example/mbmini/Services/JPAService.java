@@ -4,6 +4,11 @@ package com.example.mbmini.Services;
 import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.RepoConnections.JPARepo;
 import com.example.mbminiframework.RedisPackage.RedisMethods;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+import jakarta.persistence.criteria.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
@@ -24,6 +29,14 @@ public class JPAService {
 
     @Autowired
     private CatalogRedisService catalogRedisService;
+
+    @Autowired
+    private EntityManagerFactory emf;
+
+    @PersistenceContext
+    private EntityManager em;
+
+
 
 
     public String create(Catalog catalog){
@@ -70,10 +83,36 @@ public class JPAService {
     }
 
 
-    public List<Catalog> findAll() {
-        List<Catalog> catalogs = new ArrayList<>();
-        repository.findAll().forEach(catalogs::add);
-        return catalogs;
+
+    public List<Catalog> findAll(Integer pageSize,Integer pageNo,String similar,String productNameFilter,String quantityFilter) {
+        Integer offset=(pageNo-1) * pageSize;
+
+        CriteriaBuilder cb= em.getCriteriaBuilder();
+        CriteriaQuery<Catalog> cq= cb.createQuery(Catalog.class);
+        Root<Catalog> root=cq.from(Catalog.class);
+        List<Predicate> predicates = new ArrayList<>();
+        if (similar!=null && !similar.isEmpty()){
+            predicates.add(cb.like(root.get("productName"),"%"+similar+"%"));
+        }
+        cq.where(predicates);
+
+        List<Order> orders=new ArrayList<>();
+
+        if (productNameFilter!=null){
+            orders.add(productNameFilter.equalsIgnoreCase("DESC")
+                    ? cb.desc(root.get("productName"))
+                    : cb.asc(root.get("productName")));
+        }
+        if (quantityFilter != null) {
+            orders.add(quantityFilter.equalsIgnoreCase("DESC")
+                    ? cb.desc(root.get("quantity"))
+                    : cb.asc(root.get("quantity")));
+        }
+        if (orders.isEmpty()) {
+            orders.add(cb.asc(root.get("id")));
+        }
+        cq.orderBy(orders);
+        return em.createQuery(cq).setFirstResult(offset).setMaxResults(pageSize).getResultList();
     }
 
     public String cacheRefresh(){
