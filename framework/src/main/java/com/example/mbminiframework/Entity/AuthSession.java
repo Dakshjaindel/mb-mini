@@ -23,15 +23,21 @@ public class AuthSession extends Auditable {
     @GeneratedValue
     private Long Id;
 
+    @Getter
+    @Setter
     @Column(nullable = false)
     private Long userId;
 
     @Column(nullable = false,unique = true)
     private String authKey;
 
+    @Getter
+    @Setter
     @Column(nullable = false,unique = true)
     private String refreshToken;
 
+    @Getter
+    @Setter
     @Column(nullable = false)
     private LocalDateTime authKeyExpiresAt;
 

@@ -5,7 +5,7 @@ import com.example.mbmini.DTOs.CatalogGetAllDTO;
 import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.DTOs.CatalogCreateDTO;
 import com.example.mbmini.DTOs.CatalogUpdateDTO;
-import com.example.mbmini.Services.JPAService;
+import com.example.mbmini.Services.CatalogService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class CatalogController {
 
     @Autowired
-    private JPAService service;
+    private CatalogService service;
 
     @PostMapping({"/catalog"})
     public @ResponseBody String create(@Valid @RequestBody CatalogCreateDTO dto){
@@ -51,6 +51,11 @@ public class CatalogController {
         return service.cacheRefresh();
     }
 
+
+    @PutMapping({"/catalog/quantity"})
+    public @ResponseBody String catalogQuantityUpdate(@Valid @RequestBody com.example.mbmini.DTOs.CatalogQuantityUpdateDTO catalogQuantityUpdateDTO){
+        return service.updateQuantity(catalogQuantityUpdateDTO.getProductId(), catalogQuantityUpdateDTO.getQuantity());
+    }
 
 
 

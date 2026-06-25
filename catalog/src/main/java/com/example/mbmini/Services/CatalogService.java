@@ -2,26 +2,24 @@ package com.example.mbmini.Services;
 
 
 import com.example.mbmini.Entities.Catalog;
-import com.example.mbmini.RepoConnections.JPARepo;
+import com.example.mbmini.RepoConnections.CatalogRepo;
 import com.example.mbminiframework.RedisPackage.RedisMethods;
+import com.example.mbminishared.ItemRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 import jakarta.persistence.criteria.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;// for jackson 3.x (Spring Boot 4)
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class JPAService {
+public class CatalogService {
     @Autowired
-    private JPARepo repository;
+    private CatalogRepo repository;
 
     @Autowired
     private RedisMethods redisMethods;
@@ -36,7 +34,8 @@ public class JPAService {
     @PersistenceContext
     private EntityManager em;
 
-
+    @Autowired
+    private ItemRepo itemRepo;
 
 
     public String create(Catalog catalog){
@@ -45,6 +44,7 @@ public class JPAService {
         String key= String.valueOf(saved.getId());
         return "Saved with the Id"+ key;
     }
+
 
     public String Update(long Id,String productName,Integer quantity,BigDecimal price, Boolean isActive){
         catalogRedisService.Update( Id, productName, quantity, price,  isActive);
@@ -66,6 +66,28 @@ public class JPAService {
         return "Updated Successfully";
     }
 
+
+    public String updateQuantity(Long productId, Integer quantity){
+        Catalog catalog=repository.findById(productId).orElseThrow(()-> new RuntimeException("Catalog not found to be updated."));
+        catalogRedisService.Update(productId,catalog.getProductName(),quantity,catalog.getPrice(),catalog.getIsActive());
+        catalog.setQuantity(quantity);
+        repository.save(catalog);
+        Integer sumOfItemDemand= itemRepo.findAllByProductId(productId).stream().map(com.example.mbminishared.BasketItem::getQuantity).mapToInt(Integer::intValue).sum();
+        List<com.example.mbminishared.BasketItem> currItems=itemRepo.findAllByProductIdAndFlagOrderByCreatedAt(productId,1);
+        for (com.example.mbminishared.BasketItem item: currItems){
+            if (sumOfItemDemand<=quantity){
+                break;
+            }
+            sumOfItemDemand=sumOfItemDemand-item.getQuantity();
+            item.setFlag(0);
+            itemRepo.save(item);
+        }
+
+
+        return "Catalog updated with baskets changed";
+    }
+
+
     public Catalog Get(Long id) {
         // 1. Try Redis
         Catalog catalog = redisMethods.getFromRedis(id.toString(), Catalog.class);
@@ -81,7 +103,6 @@ public class JPAService {
 
         return catalog;
     }
-
 
 
     public List<Catalog> findAll(Integer pageSize,Integer pageNo,String similar,String productNameFilter,String quantityFilter) {
@@ -114,6 +135,7 @@ public class JPAService {
         cq.orderBy(orders);
         return em.createQuery(cq).setFirstResult(offset).setMaxResults(pageSize).getResultList();
     }
+
 
     public String cacheRefresh(){
         List<Catalog> catalogs=new ArrayList<>();

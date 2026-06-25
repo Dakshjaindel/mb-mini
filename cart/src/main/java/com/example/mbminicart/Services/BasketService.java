@@ -2,7 +2,7 @@ package com.example.mbminicart.Services;
 
 
 import com.example.mbmini.Entities.Catalog;
-import com.example.mbmini.Services.JPAService;
+import com.example.mbmini.Services.CatalogService;
 import com.example.mbminicart.Entities.*;
 import com.example.mbminicart.Repos.*;
 import com.example.mbminicustomer.ConfigsRepo.NetCreditRepo;
@@ -27,7 +27,7 @@ public class BasketService {
     private BasketRepo basketRepo;
 
     @Autowired
-    private ItemRepo itemRepo;
+    private com.example.mbminishared.ItemRepo itemRepo;
 
     @Autowired
     private com.example.mbminicustomer.ConfigsRepo.CreditRepo creditRepo;
@@ -36,7 +36,7 @@ public class BasketService {
     private NetCreditRepo netCreditRepo;
 
     @Autowired
-    private JPAService catalogService;
+    private CatalogService catalogService;
 
     @Autowired
     private CustomerService customerService;
@@ -82,7 +82,7 @@ public class BasketService {
         }
         boolean itemExists= itemRepo.existsBasketItemsByBasketIdAndProductId(basketId,productId);
         if (itemExists){
-            BasketItem item= itemRepo.findByBasketIdAndProductId(basketId,productId);
+            com.example.mbminishared.BasketItem item= itemRepo.findByBasketIdAndProductId(basketId,productId);
             if (quantity==0){
                 basket.setQuantity(basket.getQuantity()-item.getQuantity());
                 if (basket.getQuantity()==0){
@@ -104,7 +104,7 @@ public class BasketService {
             return "Item quantity updated to "+quantity;
         }
         else {
-            BasketItem item =new BasketItem(basketId,productId, quantity,1);
+            com.example.mbminishared.BasketItem item =new com.example.mbminishared.BasketItem(basketId,productId, quantity,1);
             itemRepo.save(item);
             basket.setQuantity(basket.getQuantity()+quantity);
             basket.setFlag(1);
@@ -142,7 +142,7 @@ public class BasketService {
             throw new RuntimeException("Basket is empty");
         }
 
-        List<BasketItem> items = itemRepo.findByBasketIdAndFlag(basketId, 1);
+        List<com.example.mbminishared.BasketItem> items = itemRepo.findByBasketIdAndFlag(basketId, 1);
         if (items.isEmpty()){
             throw new RuntimeException("No active items in basket");
         }
@@ -151,7 +151,7 @@ public class BasketService {
         CustomerNetCredit netCredit = netCreditRepo.getCustomerNetCreditByCustomerId(customerId);
         BigDecimal total = BigDecimal.ZERO;
 
-        for (BasketItem item : items){
+        for (com.example.mbminishared.BasketItem item : items){
             Catalog catalog = catalogService.Get(item.getProductId());
             total = total.add(catalog.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
         }
@@ -160,7 +160,7 @@ public class BasketService {
             throw new RuntimeException("Insufficient wallet balance to finalize order");
         }
 
-        for (BasketItem item : items){
+        for (com.example.mbminishared.BasketItem item : items){
             Catalog catalog = catalogService.Get(item.getProductId());
             if (catalog.getQuantity() < item.getQuantity()){
                 throw new RuntimeException("Product " + catalog.getProductName() + " is out of stock");
@@ -179,7 +179,7 @@ public class BasketService {
         basket.setFlag(2);
         basketRepo.save(basket);
 
-        for (BasketItem item : items){
+        for (com.example.mbminishared.BasketItem item : items){
             item.setFlag(2);
             itemRepo.save(item);
         }
@@ -187,5 +187,6 @@ public class BasketService {
         logRepo.save(new Log("Order finalized for basketId " + basketId + " total " + total));
         return "Order finalized successfully. Total charged: " + total;
     }
+
 
 }

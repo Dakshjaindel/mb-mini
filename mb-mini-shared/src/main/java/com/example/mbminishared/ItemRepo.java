@@ -1,14 +1,14 @@
-package com.example.mbminicart.Repos;
+package com.example.mbminishared;
 
-import com.example.mbminicart.Entities.BasketItem;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public interface ItemRepo extends CrudRepository<BasketItem,Long> {
+public interface ItemRepo extends JpaRepository<BasketItem,Long> {
 
 
     BasketItem getBasketItemByBasketId(Long basketId);
@@ -31,4 +31,7 @@ public interface ItemRepo extends CrudRepository<BasketItem,Long> {
 
 
     List<BasketItem> findAllByBasketId(Long basketId);
+
+
+    List<BasketItem> findAllByProductIdAndFlagOrderByCreatedAt(Long productId, int i);
 }

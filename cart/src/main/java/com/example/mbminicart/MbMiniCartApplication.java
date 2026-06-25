@@ -18,9 +18,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
                 "com.example.mbmini.RepoConnections",
                 "com.example.mbminicustomer",
                 "com.example.mbminiframework.RedisPackage",
-                "com.example.mbminiframework.Configs",       // ✅ add this — WebConfig, AuthInterceptor, RedisConfig
-                "com.example.mbminiframework.AuthValidation", // ✅ add this — AuthInterceptor
-                "com.example.mbminiframework.Auditing"        // ✅ add this — FrameworkAuditConfig
+                "com.example.mbminiframework.Configs",
+                "com.example.mbminiframework.AuthValidation",
+                "com.example.mbminiframework.Auditing"
         },
         excludeFilters = {
                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
