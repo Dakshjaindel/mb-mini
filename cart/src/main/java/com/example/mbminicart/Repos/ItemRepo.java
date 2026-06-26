@@ -1,6 +1,7 @@
-package com.example.mbminishared;
+package com.example.mbminicart.Repos;
 
 
+import com.example.mbminicart.Entities.BasketItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

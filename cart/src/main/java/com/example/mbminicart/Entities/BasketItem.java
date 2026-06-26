@@ -1,4 +1,4 @@
-package com.example.mbminishared;
+package com.example.mbminicart.Entities;
 
 import com.example.mbminiframework.Auditing.Auditable;
 import jakarta.persistence.*;

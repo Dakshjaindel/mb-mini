@@ -53,7 +53,7 @@ public class CatalogController {
 
 
     @PutMapping({"/catalog/quantity"})
-    public @ResponseBody String catalogQuantityUpdate(@Valid @RequestBody com.example.mbmini.DTOs.CatalogQuantityUpdateDTO catalogQuantityUpdateDTO){
+    public @ResponseBody String catalogQuantityUpdate(@Valid @RequestBody com.example.mbminiframework.Entity.CatalogQuantityUpdateDTO catalogQuantityUpdateDTO){
         return service.updateQuantity(catalogQuantityUpdateDTO.getProductId(), catalogQuantityUpdateDTO.getQuantity());
     }
 

@@ -3,11 +3,13 @@ package com.example.mbminicart.Services;
 
 import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.Services.CatalogService;
+import com.example.mbminicart.CartKafkaConsumer;
 import com.example.mbminicart.Entities.*;
 import com.example.mbminicart.Repos.*;
 import com.example.mbminicustomer.ConfigsRepo.NetCreditRepo;
 import com.example.mbminicustomer.Entities.CustomerNetCredit;
 import com.example.mbminicustomer.Services.CustomerService;
+import com.example.mbminiframework.Kafka.mbKafkaConsumer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class BasketService {
@@ -26,8 +29,7 @@ public class BasketService {
     @Autowired
     private BasketRepo basketRepo;
 
-    @Autowired
-    private com.example.mbminishared.ItemRepo itemRepo;
+
 
     @Autowired
     private com.example.mbminicustomer.ConfigsRepo.CreditRepo creditRepo;
@@ -40,6 +42,14 @@ public class BasketService {
 
     @Autowired
     private CustomerService customerService;
+
+    public String itemUpdateTopic="basketDeplete";
+
+    public String itemUpdateGroup="cartGroup";
+
+    @Autowired
+    private ItemRepo itemRepo;
+
 
 
 
@@ -82,7 +92,7 @@ public class BasketService {
         }
         boolean itemExists= itemRepo.existsBasketItemsByBasketIdAndProductId(basketId,productId);
         if (itemExists){
-            com.example.mbminishared.BasketItem item= itemRepo.findByBasketIdAndProductId(basketId,productId);
+            BasketItem item= itemRepo.findByBasketIdAndProductId(basketId,productId);
             if (quantity==0){
                 basket.setQuantity(basket.getQuantity()-item.getQuantity());
                 if (basket.getQuantity()==0){
@@ -104,7 +114,7 @@ public class BasketService {
             return "Item quantity updated to "+quantity;
         }
         else {
-            com.example.mbminishared.BasketItem item =new com.example.mbminishared.BasketItem(basketId,productId, quantity,1);
+            BasketItem item =new BasketItem(basketId,productId, quantity,1);
             itemRepo.save(item);
             basket.setQuantity(basket.getQuantity()+quantity);
             basket.setFlag(1);
@@ -142,7 +152,7 @@ public class BasketService {
             throw new RuntimeException("Basket is empty");
         }
 
-        List<com.example.mbminishared.BasketItem> items = itemRepo.findByBasketIdAndFlag(basketId, 1);
+        List<BasketItem> items = itemRepo.findByBasketIdAndFlag(basketId, 1);
         if (items.isEmpty()){
             throw new RuntimeException("No active items in basket");
         }
@@ -151,7 +161,7 @@ public class BasketService {
         CustomerNetCredit netCredit = netCreditRepo.getCustomerNetCreditByCustomerId(customerId);
         BigDecimal total = BigDecimal.ZERO;
 
-        for (com.example.mbminishared.BasketItem item : items){
+        for (BasketItem item : items){
             Catalog catalog = catalogService.Get(item.getProductId());
             total = total.add(catalog.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
         }
@@ -160,7 +170,7 @@ public class BasketService {
             throw new RuntimeException("Insufficient wallet balance to finalize order");
         }
 
-        for (com.example.mbminishared.BasketItem item : items){
+        for (BasketItem item : items){
             Catalog catalog = catalogService.Get(item.getProductId());
             if (catalog.getQuantity() < item.getQuantity()){
                 throw new RuntimeException("Product " + catalog.getProductName() + " is out of stock");
@@ -179,7 +189,7 @@ public class BasketService {
         basket.setFlag(2);
         basketRepo.save(basket);
 
-        for (com.example.mbminishared.BasketItem item : items){
+        for (BasketItem item : items){
             item.setFlag(2);
             itemRepo.save(item);
         }
@@ -187,6 +197,30 @@ public class BasketService {
         logRepo.save(new Log("Order finalized for basketId " + basketId + " total " + total));
         return "Order finalized successfully. Total charged: " + total;
     }
+
+    public String itemQuantityUpdate(com.example.mbminiframework.Entity.CatalogQuantityUpdateDTO payload) {
+
+        if (payload == null) {
+            return "No event found in Kafka, nothing to process ";
+        }
+        Long productId = payload.getProductId();
+        Integer newQty = payload.getQuantity();
+        List<BasketItem> items=itemRepo.findAllByProductIdAndFlagOrderByCreatedAt(productId,1);
+        Integer sumOfItemDemand=itemRepo.findAllByProductIdAndFlagOrderByCreatedAt(productId,1).stream().map(BasketItem::getQuantity).mapToInt(Integer::intValue).sum();
+
+        for (BasketItem item : items){
+            if (sumOfItemDemand<=newQty){
+                break;
+            }
+            sumOfItemDemand=sumOfItemDemand-item.getQuantity();
+            item.setFlag(0);
+            itemRepo.save(item);
+        }
+        return "Bakskets updated for new quantity";
+
+    }
+
+
 
 
 }

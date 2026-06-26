@@ -1,16 +1,19 @@
 package com.example.mbmini.Services;
 
 
+import com.example.mbmini.CatalogKafkaConfig;
+import com.example.mbminiframework.Entity.CatalogQuantityUpdateDTO;
 import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.RepoConnections.CatalogRepo;
+import com.example.mbminiframework.Kafka.mbKafkaProducer;
 import com.example.mbminiframework.RedisPackage.RedisMethods;
-import com.example.mbminishared.ItemRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -35,8 +38,13 @@ public class CatalogService {
     private EntityManager em;
 
     @Autowired
-    private ItemRepo itemRepo;
+    private mbKafkaProducer kafkaProducer;
 
+    @Autowired
+    private WebClient.Builder  webClientBuilder;
+
+
+    private String itemUpdateUrl="http://localhost:8082/cart/processQuantityUpdate";
 
     public String create(Catalog catalog){
         Catalog saved= repository.save(catalog);
@@ -72,19 +80,12 @@ public class CatalogService {
         catalogRedisService.Update(productId,catalog.getProductName(),quantity,catalog.getPrice(),catalog.getIsActive());
         catalog.setQuantity(quantity);
         repository.save(catalog);
-        Integer sumOfItemDemand= itemRepo.findAllByProductId(productId).stream().map(com.example.mbminishared.BasketItem::getQuantity).mapToInt(Integer::intValue).sum();
-        List<com.example.mbminishared.BasketItem> currItems=itemRepo.findAllByProductIdAndFlagOrderByCreatedAt(productId,1);
-        for (com.example.mbminishared.BasketItem item: currItems){
-            if (sumOfItemDemand<=quantity){
-                break;
-            }
-            sumOfItemDemand=sumOfItemDemand-item.getQuantity();
-            item.setFlag(0);
-            itemRepo.save(item);
-        }
+
+        kafkaProducer.publish(CatalogKafkaConfig.updateTopicName,productId.toString(),new CatalogQuantityUpdateDTO(productId,quantity));
 
 
-        return "Catalog updated with baskets changed";
+
+        return "Catalog updated";
     }
 
 

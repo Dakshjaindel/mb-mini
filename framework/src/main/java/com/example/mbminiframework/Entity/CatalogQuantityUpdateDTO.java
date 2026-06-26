@@ -1,4 +1,4 @@
-package com.example.mbmini.DTOs;
+package com.example.mbminiframework.Entity;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
