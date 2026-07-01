@@ -58,7 +58,7 @@ public class BasketController {
     @GetMapping("/optimalPath")
     public @ResponseBody List<List<Double>> findOptimalRoute(@RequestBody DateDTO request) throws Exception {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        return service.optimalRoute(sdf.parse(request.getDate()));
+        return service.optimalRoute2(sdf.parse(request.getDate()));
     }
 
 

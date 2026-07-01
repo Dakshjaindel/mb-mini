@@ -8,6 +8,16 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
       </profile>
+      <profile name="Annotation profile for ORSTesting" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+        </processorPath>
+        <module name="ORSTesting" />
+      </profile>
       <profile name="Annotation profile for mb-mini-framework" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -18,7 +28,6 @@
         <module name="mb-mini-framework" />
         <module name="mb-mini-catalog" />
         <module name="mb-mini-cart" />
-        <module name="ORSTesting" />
         <module name="mb-mini-customer" />
       </profile>
     </annotationProcessing>
@@ -32,7 +41,7 @@
       <module name="mb-mini-cart" options="-parameters" />
       <module name="mb-mini-catalog" options="-parameters -J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED -J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED -J--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED -J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED -J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED" />
       <module name="mb-mini-customer" options="-parameters -J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED -J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED -J--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED -J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED -J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED" />
-      <module name="mb-mini-framework" options="-parameters" />
+      <module name="mb-mini-framework" options="-parameters --add-exports jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup=ALL-UNNAMED" />
       <module name="mb-mini-shared" options="-parameters" />
     </option>
   </component>
