@@ -3,14 +3,16 @@ package com.example.mbminicart.Services;
 
 import com.example.mbmini.Entities.Catalog;
 import com.example.mbmini.Services.CatalogService;
-import com.example.mbminicart.CartKafkaConsumer;
 import com.example.mbminicart.Entities.*;
 import com.example.mbminicart.Repos.*;
+import com.example.mbminicustomer.ConfigsRepo.CustomerRepo;
 import com.example.mbminicustomer.ConfigsRepo.NetCreditRepo;
 import com.example.mbminicustomer.Entities.CustomerNetCredit;
-import com.example.mbminicustomer.Services.CustomerService;
-import com.example.mbminiframework.Kafka.mbKafkaConsumer;
+import com.example.mbminiframework.ORS.DTOs.MatrixServiceRequestDTO;
+import com.example.mbminiframework.ORS.RouteService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.IntStream;
 
+@Slf4j
 @Service
 public class BasketService {
+
+    @Autowired
+    private RouteService routeService;
+
+    @Autowired
+    private CustomerRepo customerRepo;
 
     @Autowired
     private LogRepo logRepo;
@@ -29,6 +38,11 @@ public class BasketService {
     @Autowired
     private BasketRepo basketRepo;
 
+    @Value("${location.hub.lat}")
+    private Double hubLat;
+
+    @Value("${location.hub.long}")
+    private Double hubLong;
 
 
     @Autowired
@@ -40,8 +54,6 @@ public class BasketService {
     @Autowired
     private CatalogService catalogService;
 
-    @Autowired
-    private CustomerService customerService;
 
     public String itemUpdateTopic="basketDeplete";
 
@@ -216,7 +228,24 @@ public class BasketService {
             item.setFlag(0);
             itemRepo.save(item);
         }
-        return "Bakskets updated for new quantity";
+        return "Baskets updated for new quantity";
+
+    }
+
+    public List<List<Double>> optimalRoute(Date currDate){
+        List<Basket> baskets=basketRepo.findByDateAndFlag(currDate,1);
+        log.info("Baksets{}; ",baskets.size());
+        List<Long> userIds= baskets.stream().map(Basket::getUserId).toList();
+        log.info("UserIds: {}", userIds);
+        List<Double> hub=List.of(hubLong,hubLat);
+        List<List<Double>> positions= new java.util.ArrayList<>(customerRepo.findAllByIdIn(userIds).stream().map(customer -> List.of(customer.getLongitude(), customer.getLatitude())).toList());
+        log.info("Customer positions before hub: {}", positions);
+        positions.add(0,hub);
+        log.info("Final positions: {}", positions);
+        MatrixServiceRequestDTO input=new MatrixServiceRequestDTO(positions,IntStream.range(0, positions.size()).boxed().toList(), IntStream.range(0, positions.size()).boxed().toList(),List.of("distance"));
+        List<List<Double>> res= routeService.getMatrix(input,positions);
+        log.info("returning result:{} ", res);
+        return res;
 
     }
 

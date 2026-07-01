@@ -10,6 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.example.mbminicustomer.ConfigsRepo.SessionRepo;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
 @RestController
 public class BasketController {
 
@@ -48,6 +53,12 @@ public class BasketController {
     @PostMapping({"/consumer/baskets/finalize"})
     public @ResponseBody String finalizeBasket(@Valid @RequestBody BasketFinalizeDTO basketFinalizeDTO){
         return service.finalizeBasket(basketFinalizeDTO.getBasketId());
+    }
+
+    @GetMapping("/optimalPath")
+    public @ResponseBody List<List<Double>> findOptimalRoute(@RequestBody DateDTO request) throws Exception {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        return service.optimalRoute(sdf.parse(request.getDate()));
     }
 
 

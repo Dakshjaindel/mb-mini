@@ -9,6 +9,7 @@
         <option value="$PROJECT_DIR$/customer/pom.xml" />
         <option value="$PROJECT_DIR$/framework/pom.xml" />
         <option value="$PROJECT_DIR$/../mb-mini-shared/pom.xml" />
+        <option value="$PROJECT_DIR$/../ORSTesting/pom.xml" />
       </list>
     </option>
   </component>

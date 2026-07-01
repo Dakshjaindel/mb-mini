@@ -53,11 +53,11 @@ public class CustomerService {
     @Autowired
     private NetCreditRepo netCreditRepo;
 
-    @Value("${ors.api.key}")
+    @Value("${opc.api.key}")
     private  String apiKey;
 
-    @Value("${ors.api.url}")
-    private String orsUrl;
+    @Value("${opc.api.url}")
+    private String opcUrl;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -65,7 +65,6 @@ public class CustomerService {
     @Value("${pin.api.url}")
     private String pinUrl;
 
-    private static final String NOMINATIM_FORWARD_URL = "https://openstreetmap.org";
 
 
 
@@ -249,7 +248,7 @@ public class CustomerService {
         String address = HouseNo + " " + Locality + ", " + City + " " + Pincode + ", India";
         String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
 
-        String url = orsUrl+"?q=" + address.replace(" ", "+")
+        String url = opcUrl+"?q=" + address.replace(" ", "+")
                 + "&key=" + apiKey
                 + "&limit=1"
                 + "&countrycode=in";
