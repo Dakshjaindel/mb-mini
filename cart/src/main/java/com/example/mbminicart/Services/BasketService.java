@@ -323,6 +323,73 @@ public class BasketService {
         log.info("Returning final optimized results: {}", res);
         return res;
     }
+    public List<List<Double>> optimalRoute3(Date currDate) {
+        List<Basket> baskets = basketRepo.findByDateAndFlag(currDate, 1);
+        log.info("Baskets size: {}", baskets.size());
+
+        List<Long> userIds = baskets.stream().map(Basket::getUserId).toList();
+        List<Double> hub = List.of(hubLong, hubLat);
+
+        List<List<Double>> positions = new ArrayList<>(
+                customerRepo.findAllByIdIn(userIds).stream()
+                        .map(customer -> List.of(customer.getLongitude(), customer.getLatitude()))
+                        .toList()
+        );
+        positions.add(0, hub); // Depot/Hub is at index 0
+
+        int totalSize = positions.size();
+        log.info("Total positions (Hub + Customers): {}", totalSize);
+
+        // 1. Initialize a full-sized 2D array matching your final matrix size
+        Double[][] masterMatrix = new Double[totalSize][totalSize];
+
+        // 2. Define your chunk threshold safely under your 58-element limit
+        final int LIMIT = 50;
+
+        // 3. Loop through rows (origins) and columns (destinations) in chunks
+        for (int rowStart = 0; rowStart < totalSize; rowStart += LIMIT) {
+            int rowEnd = Math.min(rowStart + LIMIT, totalSize);
+            List<Integer> originsIndices = IntStream.range(rowStart, rowEnd).boxed().toList();
+
+            for (int colStart = 0; colStart < totalSize; colStart += LIMIT) {
+                int colEnd = Math.min(colStart + LIMIT, totalSize);
+                List<Integer> destinationsIndices = IntStream.range(colStart, colEnd).boxed().toList();
+
+                log.info("Fetching sub-matrix chunk: Origins {}-{} | Destinations {}-{}",
+                        rowStart, rowEnd - 1, colStart, colEnd - 1);
+
+                // Construct the request DTO targeting ONLY this specific sub-grid quadrant
+                MatrixServiceRequestDTO chunkRequest = new MatrixServiceRequestDTO(
+                        positions,
+                        originsIndices,
+                        destinationsIndices,
+                        List.of("distance")
+                );
+
+                // Fetch the small sub-matrix block from ORS
+                List<List<Double>> subMatrixResponse = routeService.fetchMatrixBlock(chunkRequest);
+
+                // 4. Stitch the block response into its exact position inside the master grid
+                for (int i = 0; i < originsIndices.size(); i++) {
+                    int globalRow = originsIndices.get(i);
+                    List<Double> responseRow = subMatrixResponse.get(i);
+
+                    for (int j = 0; j < destinationsIndices.size(); j++) {
+                        int globalCol = destinationsIndices.get(j);
+                        Double val = responseRow.get(j);
+
+                        // Handle null values to safeguard the VRP math solvers
+                        masterMatrix[globalRow][globalCol] = (val == null) ? 0.0 : val;
+                    }
+                }
+            }
+        }
+
+        // 5. Send the complete assembled 2D array directly to the solver
+        List<List<Double>> res = routeService.vrpSolve3(masterMatrix, positions);
+        log.info("Returning final optimized results: {}", res);
+        return res;
+    }
 
 
 

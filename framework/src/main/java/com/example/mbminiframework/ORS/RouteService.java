@@ -23,6 +23,9 @@ public class RouteService {
     private final TSPSolver tspSolver;
 
     @Autowired
+    private TSPHeuristicSolver heuristicSolver;
+
+    @Autowired
     private VRPSolver vrpSolver;
 
     @Value("${ors.api.key}")
@@ -79,10 +82,17 @@ public class RouteService {
     }
 
     public List<List<Double>> vrpSolve2(Double[][] completedMatrix, List<List<Double>> positions) {
+        log.info("Executing Heuristic solver with a precompiled matrix of size: {}x{}",
+                completedMatrix.length, completedMatrix[0].length);
+        // Directly run your OR-Tools / solver logic using the passed matrix
+        return heuristicSolver.greedyTSp(completedMatrix,positions);
+    }
+
+    public List<List<Double>> vrpSolve3(Double[][] completedMatrix, List<List<Double>> positions) {
         log.info("Executing VRP solver with a precompiled matrix of size: {}x{}",
                 completedMatrix.length, completedMatrix[0].length);
         // Directly run your OR-Tools / solver logic using the passed matrix
-        return vrpSolver.solve(completedMatrix, positions);
+        return vrpSolver.solve(completedMatrix,positions);
     }
 
     public List<List<Double>> vrpSolve(MatrixServiceRequestDTO matrixRequest,List<List<Double>> positions){
