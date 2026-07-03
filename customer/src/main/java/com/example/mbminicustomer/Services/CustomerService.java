@@ -8,13 +8,18 @@ import com.example.mbminicustomer.ConfigsRepo.SessionRepo;
 import com.example.mbminicustomer.Entities.CustomerNetCredit;
 import com.example.mbminiframework.Entity.AuthSession;
 import com.example.mbminicustomer.Entities.Customer;
+import com.example.mbminiframework.PolyCheck.Polygon;
+import com.example.mbminiframework.PolyCheck.PolygonChecker;
 import com.example.mbminiframework.RedisPackage.RedisMethods;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class CustomerService {
 
@@ -37,6 +43,9 @@ public class CustomerService {
     private AuthKeyGenerator authKeyGenerator;
     @Autowired
     private RefreshTokenGenerator refreshTokenGenerator;
+
+    @Autowired
+    private PolygonChecker polygonChecker;
 
     @Autowired
     private CustomerRepo customerRepo;
@@ -65,6 +74,10 @@ public class CustomerService {
     @Value("${pin.api.url}")
     private String pinUrl;
 
+    @Autowired
+    private Polygon fence;
+
+    private static final String fenceKey="serviceableGeoFence";
 
 
 
@@ -103,6 +116,13 @@ public class CustomerService {
 
     @Transactional
     public String Register(Customer customer){
+
+        if (customer.getLatitude()!=null && customer.getLongitude()!=null){
+            if (!fence.insidePolygon(List.of(customer.getLatitude(),customer.getLongitude()))){
+                throw new RuntimeException("Location Outside Delivery Fence.");
+            }
+        }
+
         Long pincode=customer.getPincode();
         String fullPinUrl = pinUrl + "/" + pincode;
 
@@ -266,6 +286,10 @@ public class CustomerService {
         double latitude = ((Number) geometry.get("lat")).doubleValue();
         double longitude = ((Number) geometry.get("lng")).doubleValue();
 
+        if (!fence.insidePolygon(List.of(latitude,longitude))){
+            throw new RuntimeException("New Adress Outside Our Delivery Fence.");
+        }
+
         customer.setLatitude(latitude);
         customer.setLongitude(longitude);
         customerRepo.save(customer);
@@ -274,6 +298,28 @@ public class CustomerService {
 
 
     }
+
+    public String validPolygon(List<List<Double>> points){
+
+        if (!polygonChecker.isValidFence(points)){
+            throw new RuntimeException("Invalid Points provided.");
+        }
+
+        redisMethods.addInRedis(points,fenceKey);
+        return "Fence set successfully with " + points.size() + " points";
+    }
+
+    @PostConstruct
+    public void loadFenceFromRedis(){
+        List<List<Double>> points=redisMethods.getFence();
+        if (points != null) {
+            fence = polygonChecker.buildPolygon(points);
+            log.info("Fence loaded from Redis with {} points", points.size());
+        } else {
+            log.info("No fence in Redis — using default fence from framework");
+        }
+    }
+
 
 
 

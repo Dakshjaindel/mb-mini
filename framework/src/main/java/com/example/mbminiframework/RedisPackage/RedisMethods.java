@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.List;
+
 
 @Component
 public class RedisMethods {
@@ -73,4 +75,28 @@ public class RedisMethods {
             throw new RuntimeException("Redis error: " + e.getMessage());
         }
     }
+
+
+    public void saveFence(List<List<Double>> points) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String value = mapper.writeValueAsString(points);
+            jedis.set("serviceableGeoFence", value);  // fixed key — always overwrites
+            System.out.println("Fence saved to Redis");
+        } catch (Exception e) {
+            System.out.println("Redis fence save error: " + e.getMessage());
+        }
+    }
+
+    public List<List<Double>> getFence() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String existing = jedis.get("serviceableGeoFence");
+            if (existing == null) return null;
+            return mapper.readValue(existing, new com.fasterxml.jackson.core.type.TypeReference<List<List<Double>>>() {});
+        } catch (Exception e) {
+            System.out.println("Redis fence get error: " + e.getMessage());
+            return null;
+        }
+    }
+
+
 }

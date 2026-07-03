@@ -87,5 +87,10 @@ public class CustomerController {
         );
     }
 
+    @PostMapping({"/setFence"})
+    public @ResponseBody String setFence(@RequestBody FenceDTO fenceDTO){
+        return service.validPolygon(fenceDTO.getPoints());
+    }
+
 
 }
