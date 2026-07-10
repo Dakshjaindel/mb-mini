@@ -97,13 +97,56 @@ export function parseSession(text) {
   return { authKey, refreshToken };
 }
 
+function cleanCatalogFilters(filters = {}) {
+  const pageSize = Math.max(1, Number(filters.pageSize) || 100);
+  const pageNo = Math.max(1, Number(filters.pageNo) || 1);
+  return {
+    pageSize,
+    pageNo,
+    similar: filters.similar || null,
+    productNameFilter: filters.productNameFilter || null,
+    quantityFilter: filters.quantityFilter || null,
+  };
+}
+
+async function listAllCatalog(filters = {}) {
+  const firstPage = Math.max(1, Number(filters.pageNo) || 1);
+  const pageSize = Math.max(1, Number(filters.pageSize) || 100);
+  const all = [];
+
+  for (let pageNo = firstPage; pageNo < firstPage + 1000; pageNo += 1) {
+    const page = await request('catalog', '/catalog/all', {
+      method: 'POST',
+      body: cleanCatalogFilters({ ...filters, pageSize, pageNo }),
+    });
+    if (!Array.isArray(page) || page.length === 0) break;
+    all.push(...page);
+    if (page.length < pageSize) break;
+  }
+
+  return all;
+}
+
 export const customerApi = {
   generateLogin: (phoneNo) =>
-    request('customer', '/customers/generate_login', { method: 'POST', body: { phoneNo } }),
+    request('customer', '/customers/generate_login', { method: 'POST', body: { PhoneNo: phoneNo } }),
   login: (phoneNo, password) =>
-    request('customer', '/customers/login', { method: 'POST', body: { phoneNo, password } }),
-  register: (payload) =>
-    request('customer', '/customers/register', { method: 'POST', body: payload }),
+    request('customer', '/customers/login', { method: 'POST', body: { PhoneNo: phoneNo, Password: password } }),
+  register: (payload) => {
+    const body = {
+      Name: payload.name,
+      PhoneNo: payload.phoneNo,
+      Password: payload.password,
+      Email: payload.email,
+      HouseNo: payload.houseNo,
+      Locality: payload.locality,
+      City: payload.city,
+      Pincode: payload.pincode,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+    };
+    return request('customer', '/customers/register', { method: 'POST', body });
+  },
   me: (authKey) =>
     request('customer', '/customers/me', { auth: { bearer: authKey } }),
   logout: (authKey) =>
@@ -118,14 +161,15 @@ export const customerApi = {
   updateProfile: (payload) =>
     request('customer', '/customers', { method: 'PUT', body: payload }),
   updatePassword: (id, newPass) =>
-    request('customer', '/customers/password', { method: 'PUT', body: { id, newPass } }),
+    request('customer', '/customers/password', { method: 'PUT', body: { Id: id, newPass } }),
   updateAddress: (payload) =>
     request('customer', '/customer/address', { method: 'PUT', body: payload }),
 };
 
 export const catalogApi = {
   // GET /catalog/all takes a filter body; sent via the POST alias so browsers can attach it.
-  list: (filters) => request('catalog', '/catalog/all', { method: 'POST', body: filters }),
+  list: (filters) => request('catalog', '/catalog/all', { method: 'POST', body: cleanCatalogFilters(filters) }),
+  listAll: listAllCatalog,
   get: (id) => request('catalog', '/catalog/' + encodeURIComponent(id)),
 };
 

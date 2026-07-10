@@ -85,10 +85,41 @@ async function request(service, path, { method = 'GET', body } = {}) {
   return data;
 }
 
+function cleanCatalogFilters(filters = {}) {
+  const pageSize = Math.max(1, Number(filters.pageSize) || 100);
+  const pageNo = Math.max(1, Number(filters.pageNo) || 1);
+  return {
+    pageSize,
+    pageNo,
+    similar: filters.similar || null,
+    productNameFilter: filters.productNameFilter || null,
+    quantityFilter: filters.quantityFilter || null,
+  };
+}
+
+async function listAllCatalog(filters = {}) {
+  const firstPage = Math.max(1, Number(filters.pageNo) || 1);
+  const pageSize = Math.max(1, Number(filters.pageSize) || 100);
+  const all = [];
+
+  for (let pageNo = firstPage; pageNo < firstPage + 1000; pageNo += 1) {
+    const page = await request('catalog', '/catalog/all', {
+      method: 'POST',
+      body: cleanCatalogFilters({ ...filters, pageSize, pageNo }),
+    });
+    if (!Array.isArray(page) || page.length === 0) break;
+    all.push(...page);
+    if (page.length < pageSize) break;
+  }
+
+  return all;
+}
+
 export const catalogApi = {
   create: (payload) => request('catalog', '/catalog', { method: 'POST', body: payload }),
   update: (payload) => request('catalog', '/catalog', { method: 'PUT', body: payload }),
-  list: (filters) => request('catalog', '/catalog/all', { method: 'POST', body: filters }),
+  list: (filters) => request('catalog', '/catalog/all', { method: 'POST', body: cleanCatalogFilters(filters) }),
+  listAll: listAllCatalog,
   get: (id) => request('catalog', '/catalog/' + encodeURIComponent(id)),
   updateQuantity: (productId, quantity) =>
     request('catalog', '/catalog/quantity', { method: 'PUT', body: { productId, quantity } }),

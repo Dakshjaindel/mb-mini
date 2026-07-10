@@ -3,7 +3,7 @@ import { catalogApi, cartApi } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { Card, Field, Input, Button, Result, useAction } from '../ui.jsx';
 
-const DEFAULT_FILTERS = { pageSize: 20, pageNo: 0, similar: '', productNameFilter: '', quantityFilter: '' };
+const DEFAULT_FILTERS = { pageSize: 100, pageNo: 1, similar: '', productNameFilter: '', quantityFilter: '' };
 
 export default function Catalog() {
   const { isAuthed, session } = useAuth();
@@ -15,14 +15,7 @@ export default function Catalog() {
   const set = (k) => (e) => setFilters((s) => ({ ...s, [k]: e.target.value }));
 
   async function load() {
-    const payload = {
-      pageSize: Number(filters.pageSize) || 20,
-      pageNo: Number(filters.pageNo) || 0,
-      similar: filters.similar || null,
-      productNameFilter: filters.productNameFilter || null,
-      quantityFilter: filters.quantityFilter || null,
-    };
-    const data = await list.run(() => catalogApi.list(payload));
+    const data = await list.run(() => catalogApi.listAll(filters));
     setItems(Array.isArray(data) ? data : []);
   }
 
@@ -37,18 +30,30 @@ export default function Catalog() {
 
   return (
     <>
-      <Card title="Browse catalog" subtitle="GET /catalog/all — filter and paginate the product list.">
+      <Card title="Browse catalog" subtitle="GET /catalog/all — filter and load every matching product.">
         <form
           onSubmit={(e) => { e.preventDefault(); load().catch(() => {}); }}
         >
           <div className="row">
-            <Field label="Name contains"><Input value={filters.productNameFilter} onChange={set('productNameFilter')} placeholder="milk" /></Field>
-            <Field label="Similar to"><Input value={filters.similar} onChange={set('similar')} placeholder="fuzzy match" /></Field>
-            <Field label="Quantity filter"><Input value={filters.quantityFilter} onChange={set('quantityFilter')} placeholder="e.g. >0" /></Field>
+            <Field label="Name contains"><Input value={filters.similar} onChange={set('similar')} placeholder="milk" /></Field>
+            <Field label="Sort by product">
+              <select className="input" value={filters.productNameFilter} onChange={set('productNameFilter')}>
+                <option value="">Default</option>
+                <option value="ASC">A to Z</option>
+                <option value="DESC">Z to A</option>
+              </select>
+            </Field>
+            <Field label="Sort by quantity">
+              <select className="input" value={filters.quantityFilter} onChange={set('quantityFilter')}>
+                <option value="">Default</option>
+                <option value="ASC">Low to high</option>
+                <option value="DESC">High to low</option>
+              </select>
+            </Field>
           </div>
           <div className="row">
-            <Field label="Page size"><Input type="number" value={filters.pageSize} onChange={set('pageSize')} /></Field>
-            <Field label="Page no."><Input type="number" value={filters.pageNo} onChange={set('pageNo')} /></Field>
+            <Field label="Page size"><Input type="number" min="1" value={filters.pageSize} onChange={set('pageSize')} /></Field>
+            <Field label="Start page"><Input type="number" min="1" value={filters.pageNo} onChange={set('pageNo')} /></Field>
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
               <Button loading={list.loading} type="submit">Search</Button>
             </div>

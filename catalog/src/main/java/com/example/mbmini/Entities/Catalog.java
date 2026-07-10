@@ -21,6 +21,8 @@ public class Catalog extends Auditable {
 
     private Long Id;
 
+    @Column
+    private String StockCode;
 
     @Column
     private String productName;

@@ -116,7 +116,7 @@ function RegisterForm({ onAuthed }) {
         </div>
         <div className="row">
           <Field label="Password"><Input type="password" value={f.password} onChange={set('password')} required /></Field>
-          <Field label="Email"><Input type="email" value={f.email} onChange={set('email')} /></Field>
+          <Field label="Email"><Input type="email" value={f.email} onChange={set('email')} required /></Field>
         </div>
         <div className="row">
           <Field label="House no."><Input type="number" value={f.houseNo} onChange={set('houseNo')} /></Field>
@@ -124,7 +124,7 @@ function RegisterForm({ onAuthed }) {
         </div>
         <div className="row">
           <Field label="City"><Input value={f.city} onChange={set('city')} /></Field>
-          <Field label="Pincode"><Input type="number" value={f.pincode} onChange={set('pincode')} /></Field>
+          <Field label="Pincode"><Input type="number" value={f.pincode} onChange={set('pincode')} required /></Field>
         </div>
         <div className="row">
           <Field label="Latitude" hint="Optional, used for delivery geofencing"><Input type="number" step="any" value={f.latitude} onChange={set('latitude')} /></Field>

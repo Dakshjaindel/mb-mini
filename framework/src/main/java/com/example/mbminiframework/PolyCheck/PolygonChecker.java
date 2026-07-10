@@ -3,7 +3,6 @@ package com.example.mbminiframework.PolyCheck;
 
 import com.example.mbminiframework.RedisPackage.RedisMethods;
 import lombok.extern.slf4j.Slf4j;
-import org.graalvm.nativeimage.c.struct.CPointerTo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

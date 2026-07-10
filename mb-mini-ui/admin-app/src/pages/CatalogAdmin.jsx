@@ -17,7 +17,7 @@ export default function CatalogAdmin() {
 
   async function load() {
     const data = await listAct.run(() =>
-      catalogApi.list({ pageSize: 100, pageNo: 0, similar: null, productNameFilter: null, quantityFilter: null })
+      catalogApi.listAll({ pageSize: 100, pageNo: 1, similar: null, productNameFilter: null, quantityFilter: null })
     );
     setItems(Array.isArray(data) ? data : []);
   }
