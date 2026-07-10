@@ -55,13 +55,15 @@ public class BasketController {
         return service.finalizeBasket(basketFinalizeDTO.getBasketId());
     }
 
-    @GetMapping("/optimalPath")
+    // GET keeps the original contract; POST alias lets browser clients send the date body
+    // (browsers cannot attach a request body to a GET).
+    @RequestMapping(value = "/optimalPath", method = {RequestMethod.GET, RequestMethod.POST})
     public @ResponseBody List<List<Double>> findOptimalRoute(@RequestBody DateDTO request) throws Exception {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         return service.optimalRoute2(sdf.parse(request.getDate()));
     }
 
-    @GetMapping({"/optimalPath2"})
+    @RequestMapping(value = "/optimalPath2", method = {RequestMethod.GET, RequestMethod.POST})
     public @ResponseBody List<List<Double>> findOptimalRoute2(@RequestBody DateDTO request) throws Exception {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         return service.optimalRoute3(sdf.parse(request.getDate()));

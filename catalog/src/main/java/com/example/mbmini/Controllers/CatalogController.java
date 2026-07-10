@@ -36,7 +36,9 @@ public class CatalogController {
         service.Update(updateDTO.getId(),updateDTO.getProductName(), updateDTO.getQuantity(), updateDTO.getPrice(),updateDTO.getIsActive());
         return "Catalog updated from json body";
     }
-    @GetMapping({"/catalog/all"})
+    // GET keeps the original contract; POST alias lets browser clients send the filter body
+    // (browsers cannot attach a request body to a GET).
+    @RequestMapping(value = {"/catalog/all"}, method = {RequestMethod.GET, RequestMethod.POST})
     public List<Catalog> getAll(@Valid@RequestBody CatalogGetAllDTO catalogGetAllDTO) {
         return service.findAll(catalogGetAllDTO.getPageSize(), catalogGetAllDTO.getPageNo(),catalogGetAllDTO.getSimilar(),catalogGetAllDTO.getProductNameFilter(), catalogGetAllDTO.getQuantityFilter());
     }
