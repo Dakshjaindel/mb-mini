@@ -207,8 +207,10 @@ public class CustomerService {
     }
 
     public String logout(String authKey){
+        System.out.println("DEBUG LOGOUT AUTHKEY RECEIVED: [" + authKey + "]");
 
         AuthSession session=sessionRepo.findByAuthKey(authKey).orElseThrow(() ->new RuntimeException("Session not found"));
+        System.out.println("DEBUG SESSION FOUND: " + session.getId());
 
         try {
             // Attempt to clean up Redis cache

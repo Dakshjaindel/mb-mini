@@ -15,9 +15,9 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
         </processorPath>
-        <module name="mb-mini-catalog" />
         <module name="mb-mini-cart" />
         <module name="mb-mini-customer" />
+        <module name="mb-mini-catalog" />
       </profile>
       <profile name="Annotation profile for mb-mini-framework" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="CustomerSuite">
+<!-- These parameters communicate targeted test environments -->
+<parameter name="test.db.url" value="jdbc:mysql://localhost:3306/mb_mini_test?createDatabaseIfNotExist=true"/>
+<parameter name="test.redis.db" value="6"/>
+
+<test name="CustomerTests">
+    <classes>
+        <class name="com.example.mbminicustomer.MbMiniCustomerApplicationTests"/>
+    </classes>
+</test>
+</suite>
+

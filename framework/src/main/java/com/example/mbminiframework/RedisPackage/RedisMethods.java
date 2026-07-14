@@ -98,5 +98,15 @@ public class RedisMethods {
         }
     }
 
+    public void flushAllData() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.flushAll();
+            System.out.println("Redis FlushAll executed successfully.");
+        } catch (Exception e) {
+            System.out.println("Redis flush error: " + e.getMessage());
+        }
+    }
+
+
 
 }

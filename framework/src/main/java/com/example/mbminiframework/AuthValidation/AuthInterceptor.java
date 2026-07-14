@@ -24,6 +24,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             throws Exception {
 
         String token = request.getHeader("AuthKey");
+        System.out.println("[DEBUG FOR LOGOUT: TOKEN : "+ token);
 
         if (token == null || token.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -38,6 +39,12 @@ public class AuthInterceptor implements HandlerInterceptor {
         AuthSession authSession;
         try {
             authSession = redisMethods.getFromRedis(token, AuthSession.class);
+
+            if (authSession == null) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Invalid or expired token\"}");
+                return false;
+            }
         } catch (RuntimeException e) {
 
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

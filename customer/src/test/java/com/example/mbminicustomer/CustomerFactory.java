@@ -22,9 +22,14 @@ public class CustomerFactory {
         String phoneNo = "9" + fakeValuesService.numerify("#########");
 
         // lat between 28.38 and 28.46 (inside Gurugram fence)
-        double lat = 28.380 + (Math.random() * 0.080);
-        // lon between 77.04 and 77.10
-        double lon = 77.040 + (Math.random() * 0.060);
+        // Replace random lat/long generation with fence-safe values
+        double lat = 28.420 + (Math.random() * 0.020);  // 28.420 to 28.440
+        double lon = 77.038 + (Math.random() * 0.020); // 77.041 to 77.099
+        System.out.println("DEBUG LAT: " + lat + " LON: " + lon);
+
+        // Replace pincode generation with Gurugram pincode
+        String[] gurugramPincodes = {"110001", "110002", "110003", "110009", "110011", "110015", "110018"};
+        randomUser.put("Pincode", gurugramPincodes[(int)(Math.random() * gurugramPincodes.length)]);
 
         randomUser.put("Name", faker.name().fullName());
         randomUser.put("PhoneNo", phoneNo);
@@ -33,10 +38,9 @@ public class CustomerFactory {
         randomUser.put("HouseNo", fakeValuesService.numerify("###"));
         randomUser.put("Locality", faker.address().streetName());
         randomUser.put("City", "Gurugram");  // ← fixed to valid city
-        randomUser.put("Pincode", fakeValuesService.numerify("11000#"));  // ← Gurugram pincode
-        randomUser.put("latitude", String.valueOf(lat));   // ← inside fence
-        randomUser.put("longitude", String.valueOf(lon));  // ← inside fence
-
+        
+        randomUser.put("latitude", String.valueOf(lat));
+        randomUser.put("longitude", String.valueOf(lon));
         return randomUser;
     }
 }

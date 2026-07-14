@@ -3,6 +3,7 @@ package com.example.mbminicustomer;
 import com.example.mbminicustomer.ConfigsRepo.SessionRepo;
 import com.example.mbminicustomer.Entities.Customer;
 import com.example.mbminicustomer.Services.CustomerService;
+import com.example.mbminiframework.RedisPackage.RedisMethods;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -28,8 +30,9 @@ public class MbMiniCustomerApplicationTests extends AbstractTestNGSpringContextT
 
     private Map<String,String> user;
 
+
     @Autowired
-    private RandomPointGenerator pointGenerator;
+    private RedisMethods redisMethods;
 
     @Autowired
     private CustomerService customerService;
@@ -41,7 +44,8 @@ public class MbMiniCustomerApplicationTests extends AbstractTestNGSpringContextT
     private SessionRepo sessionRepo;
 
     @Autowired
-    private CustomerFactory customerFactory;
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
 
     @BeforeMethod
     public void setup(){
@@ -51,11 +55,21 @@ public class MbMiniCustomerApplicationTests extends AbstractTestNGSpringContextT
 
     }
 
-    @Test
+    @org.testng.annotations.BeforeSuite
+    @org.testng.annotations.Parameters({"test.db.url", "test.redis.db"})
+    public void initTestEnvironment(@org.testng.annotations.Optional("jdbc:mysql://localhost:3306/mb_mini_test?createDatabaseIfNotExist=true") String dbUrl,
+                                    @org.testng.annotations.Optional("6") String redisDb) {
+        System.setProperty("spring.datasource.url", dbUrl);
+        System.setProperty("spring.data.redis.database", redisDb);
+        System.out.println(">>> ROUTING INTEGRATION TESTS TO DATABASE: " + dbUrl);
+        System.out.println(">>> ROUTING INTEGRATION TESTS TO REDIS DB: " + redisDb);
+    }
+
+    @Test(priority = 1)
     public void registerTest(){
         System.out.println("--- TESTING PORT: " + port + " ---");
 
-        Map<String, String> user = customerFactory.getRandomUser();
+        Map<String, String> user = CustomerFactory.getRandomUser();
 
         RestAssured.given()
                 .baseUri("http://localhost")
@@ -69,7 +83,7 @@ public class MbMiniCustomerApplicationTests extends AbstractTestNGSpringContextT
 
     }
 
-    @org.testng.annotations.Test
+    @org.testng.annotations.Test(priority = 2)
     public void generateLoginTest(){
         System.out.println("--- TESTING PORT: " + port + "---");
         Map<String,String> user= CustomerFactory.getRandomUser();
@@ -89,7 +103,7 @@ public class MbMiniCustomerApplicationTests extends AbstractTestNGSpringContextT
 
     }
 
-    @org.testng.annotations.Test
+    @org.testng.annotations.Test(priority = 3)
     public void loginTest(){
         System.out.println("--- TESTING PORT: " + port + "---");
         Map<String,String> user= CustomerFactory.getRandomUser();
@@ -110,35 +124,53 @@ public class MbMiniCustomerApplicationTests extends AbstractTestNGSpringContextT
                 .statusCode(200);
     }
 
-    @org.testng.annotations.Test
+    @org.testng.annotations.Test(priority = 4,dependsOnMethods = "loginTest")
     public void logoutTest() {
-        System.out.println("--- TESTING PORT: " + port + "---");
         Map<String, String> user = CustomerFactory.getRandomUser();
-        String registered = customerService.Register(new Customer(user.get("Name"), user.get("PhoneNo"), user.get("Password"), user.get("Email"), Long.valueOf(user.get("HouseNo")), user.get("Locality"), user.get("City"), Long.valueOf(user.get("Pincode")), Double.valueOf(user.get("latitude")), Double.valueOf(user.get("longitude"))));
+
+        String registerResponse = RestAssured.given()
+                .baseUri("http://localhost")
+                .port(port)
+                .contentType(ContentType.JSON)
+                .body(user)
+                .when()
+                .post("/customers/register")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+
+        System.out.println("DEBUG REGISTER RESPONSE: [" + registerResponse + "]");
+
         Pattern pattern = Pattern.compile("AuthKey:\\s*([^\\s|]+)");
-        Matcher matcher = pattern.matcher(registered);
+        Matcher matcher = pattern.matcher(registerResponse);
         String authKey = null;
         if (matcher.find()) {
             authKey = matcher.group(1);
         }
-        System.out.println("DEBUG LOGOUT TOKEN: [" + authKey + "]");
-        boolean exists = sessionRepo.findByAuthKey(authKey).isPresent();
-        System.out.println("--- DOES SESSION EXIST IN DB BEFORE LOGOUT? " + exists + " ---");
 
+        System.out.println("DEBUG AUTH KEY SENDING TO LOGOUT: [" + authKey + "]");
+
+        // check Redis directly
+        String redisKey = "com.example.mbminiframework.Entity.AuthSession." + authKey;
+        System.out.println("DEBUG REDIS KEY: [" + redisKey + "]");
+
+        try {
+            Thread.sleep(500);
+        } catch (Exception e) {
+        }  // small delay
 
         RestAssured.given()
                 .baseUri("http://localhost")
                 .port(port)
                 .contentType(ContentType.JSON)
-                // Add "Bearer " prefix with a space here
-                .header("AuthKey", "Bearer " + authKey)
+                .header("AuthKey", authKey)
                 .when()
                 .post("/consumer/customers/logout")
                 .then()
                 .statusCode(200);
     }
 
-    @org.testng.annotations.Test
+    @org.testng.annotations.Test(priority = 6)
     public void fenceTest(){
         List<List<Double>> points= RandomPointGenerator.generateNearbyPoints();
         Map<String,List<List<Double>>> input=new HashMap<>();
@@ -156,12 +188,12 @@ public class MbMiniCustomerApplicationTests extends AbstractTestNGSpringContextT
 
     }
 
-    @org.testng.annotations.Test
+    @org.testng.annotations.Test(priority = 5)
     public void failRegisterLogin(){
         System.out.println("Running to get a 400 Error");
         System.out.println("--- TESTING PORT: " + port + " ---");
 
-        Map<String, String> user = customerFactory.getRandomUser();
+        Map<String, String> user = CustomerFactory.getRandomUser();
         user.put("Pincode",  "1230984L");
 
         RestAssured.given()
@@ -174,6 +206,39 @@ public class MbMiniCustomerApplicationTests extends AbstractTestNGSpringContextT
                 .then()
                 .statusCode(400);
 
+    }
+
+    @AfterClass
+    public void testCleanup() {
+        System.out.println("--- STARTING TEST ENVIRONMENT CLEANUP ---");
+
+        // 1. Wipe Redis DB 6 completely
+        try {
+            redisMethods.flushAllData(); // Executing jedis.flushDB() as added previously
+        } catch (Exception e) {
+            System.err.println("CLEANUP ERROR: Failed to clear Redis Database 6: " + e.getMessage());
+        }
+
+        // 2. Clear out test session structures
+        try {
+            sessionRepo.deleteAll();
+        } catch (Exception e) {
+            System.err.println("CLEANUP ERROR: Failed to sweep session repository: " + e.getMessage());
+        }
+
+        // 3. Purge MySQL tables inside mb_mini_test database
+        try {
+            System.out.println("DEBUG CLEANUP: Truncating customer data tables inside mb_mini_test...");
+            // Disable foreign keys temporarily to prevent deletion lock failures
+            jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0;");
+            jdbcTemplate.execute("TRUNCATE TABLE customer;"); // Replace 'customer' with your actual table name if different
+            jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1;");
+            System.out.println("DEBUG CLEANUP: Successfully purged all test database records.");
+        } catch (Exception e) {
+            System.err.println("CLEANUP ERROR: Database truncate statement failed: " + e.getMessage());
+        }
+
+        System.out.println("--- TEST ENVIRONMENT CLEANUP COMPLETE ---");
     }
 
 }

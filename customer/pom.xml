@@ -35,6 +35,8 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
@@ -99,12 +101,16 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId> <!-- Changed to correct artifact name -->
+            <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.junit.jupiter</groupId>
                     <artifactId>junit-jupiter</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -148,6 +154,9 @@
 
 
 
+
+
+
     </dependencies>
 
     <build>
@@ -160,10 +169,23 @@
                     <mainClass>com.example.mbminicustomer.MbMiniCustomerApplication</mainClass>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-testng</artifactId>
+                        <version>3.2.5</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -189,7 +211,30 @@
             <plugin>
                 <groupId>org.openclover</groupId>
                 <artifactId>clover-maven-plugin</artifactId>
-                <version>4.5.2</version> <!-- Use the latest stable version -->
+                <version>4.5.2</version>
+                <configuration>
+                    <generateHtml>true</generateHtml>
+                    <generateXml>true</generateXml>
+                    <targetPercentage>50%</targetPercentage>
+                    <includesTestSourceRoots>true</includesTestSourceRoots>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/DTOs/**</exclude>
+                        <exclude>**/Entities/**</exclude>
+                        <exclude>**/*Application.java</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>clover-setup</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>setup</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
         </plugins>

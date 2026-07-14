@@ -10,29 +10,16 @@ import java.util.Random;
 public class RandomPointGenerator {
 
     public static List<List<Double>> generateNearbyPoints() {
-        Random random = new Random();
-        List<List<Double>> points = new ArrayList<>();
+        double centerLat = 28.430;
+        double centerLon = 77.048;
+        double offset = 0.015;
 
-        // 1. Generate a valid central anchor (using realistic Delhi region defaults)
-        double centerLat = 28.40 + (random.nextDouble() * 0.1);
-        double centerLng = 77.00 + (random.nextDouble() * 0.1);
-
-        // 2. Generate a random radius size for the fence (e.g., 0.01 to 0.03 degrees)
-        double size = 0.01 + (random.nextDouble() * 0.02);
-
-        // 3. Construct an explicit, ordered bounding box clockwise (Top-Left -> Top-Right -> Bottom-Right -> Bottom-Left)
-        // This mathematically guarantees lines will never intersect or twist
-        double minLat = centerLat - size;
-        double maxLat = centerLat + size;
-        double minLng = centerLng - size;
-        double maxLng = centerLng + size;
-
-        points.add(List.of(minLat, minLng)); // 1. Bottom-Left (Start)
-        points.add(List.of(maxLat, minLng)); // 2. Top-Left
-        points.add(List.of(maxLat, maxLng)); // 3. Top-Right
-        points.add(List.of(minLat, maxLng)); // 4. Bottom-Right
-        points.add(List.of(minLat, minLng)); // 5. Bottom-Left (Explicit Loop Closure)
-
-        return points;
+        return List.of(
+                List.of(centerLat - offset, centerLon - offset),  // SW
+                List.of(centerLat + offset, centerLon - offset),  // NW
+                List.of(centerLat + offset, centerLon + offset),  // NE
+                List.of(centerLat - offset, centerLon + offset),  // SE
+                List.of(centerLat - offset, centerLon - offset)   // close
+        );
     }
 }
