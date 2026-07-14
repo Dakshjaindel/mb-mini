@@ -65,7 +65,8 @@ public class CustomerController {
     }
 
     @PostMapping({"/consumer/customers/logout"})
-    public @ResponseBody String logout(@RequestHeader("Authorization") String authHeader){
+    public @ResponseBody String logout(@RequestHeader("AuthKey") String authHeader){
+        System.out.println("Logout API is Called");
         String authKey = authHeader.replace("Bearer ", "");
         return service.logout(authKey);
     }
@@ -76,7 +77,7 @@ public class CustomerController {
     }
 
     @GetMapping({"/customers/me"})
-    public @ResponseBody CustomerMeDTO me(@RequestHeader("Authorization") String authHeader){
+    public @ResponseBody CustomerMeDTO me(@RequestHeader("AuthKey") String authHeader){
         String authKey = authHeader.replace("Bearer ", "");
         Customer customer = service.getCustomerByAuthKey(authKey);
         return new CustomerMeDTO(

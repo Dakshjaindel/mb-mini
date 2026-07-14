@@ -31,6 +31,10 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
 
+        if (token.startsWith("Bearer ")) {
+            token = token.replace("Bearer ", "");
+        }
+
         AuthSession authSession;
         try {
             authSession = redisMethods.getFromRedis(token, AuthSession.class);

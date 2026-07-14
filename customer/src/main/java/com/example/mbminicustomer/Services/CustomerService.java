@@ -210,7 +210,13 @@ public class CustomerService {
 
         AuthSession session=sessionRepo.findByAuthKey(authKey).orElseThrow(() ->new RuntimeException("Session not found"));
 
-        redisMethods.deleteInRedis(session, session.getId());
+        try {
+            // Attempt to clean up Redis cache
+            redisMethods.deleteInRedis(session, session.getId());
+        } catch (Exception e) {
+            // Log the exact error to console for visibility during tests
+            System.err.println("WARN: Redis delete failed during logout: " + e.getMessage());
+        }
         sessionRepo.delete(session);
 
         return "Logged out and session ended";
